@@ -1,8 +1,10 @@
 from matplotlib import pyplot as plt
 import numpy as np
+import sys
 
-#from dqn import DQN
-from reinforce import ReinforceLearner
+sys.path.append('methods/')
+from actorcritic import ACLearner
+sys.path.append('examples/')
 from spiral_example import SpiralSystem
 
 class AgentWrapper:
@@ -72,7 +74,7 @@ class EnvWrapper:
 
 if __name__ == '__main__':
 	# training parameters
-	max_executions = 10
+	max_episodes = 10
 
 	# create environment
 	env = EnvWrapper()
@@ -82,10 +84,10 @@ if __name__ == '__main__':
 	agent = AgentWrapper(state_size, action_size)
 
 	# create log database
-	state_log = np.empty([max_executions, state_size, len(timeline)])
+	state_log = np.empty([max_episodes, state_size, len(timeline)])
 
 	# run system
-	for i_exec in range(max_executions):
+	for i_exec in range(max_episodes):
 		# "Haruki, reset."
 		env.reset()
 

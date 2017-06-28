@@ -2,6 +2,7 @@ import numpy as np
 import math
 from keras.initializations import normal, identity
 from keras.models import Sequential, Model
+from keras.engine.traning import collect_trainable_weights
 from keras.layers import Dense, Flatten, input, merge, Lambda
 from keras.optimizers import Adam
 import tensorflow as tf
