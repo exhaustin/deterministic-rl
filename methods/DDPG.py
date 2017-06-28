@@ -43,7 +43,7 @@ class DDPGLearner:
 	def __init__(self, state_dim, action_dim,
 		BATCH_SIZE=50,
 		TAU=0.1,	#target network hyperparameter
-		LRA=0.0001	#learning rate for actor
+		LRA=0.0001,	#learning rate for actor
 		LRC=0.001,	#learning rate for critic
 		GAMMA = 0.99
 	):	

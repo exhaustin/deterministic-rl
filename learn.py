@@ -8,14 +8,21 @@ sys.path.append('examples/')
 from spiral_example import SpiralSystem
 
 class AgentWrapper:
+	# Agent parameters
+	BATCH_SIZE = 50
+	TAU = 0.1
+	LRA = 0.0001
+	LRC = 0.001
+	GAMMA = 0.99
+
 	def __init__(self, state_size, action_size):
-		return
+		model = DDPGLearner(state_size, action_size, BATCH_SIZE, TAU, LRA, LRC, GAMMA)
 
 	def act(self, state):
-		return np.array([0,0,0])
+		return model.act(state)
 
-	def remember(self, state, next_state, reward, done):
-		return 0
+	def learn(self, state, action, reward, new_state, done):
+		model.act(state, action, reward, new_state, done)
 
 class EnvWrapper:
 	state_size = 7
@@ -50,22 +57,32 @@ class EnvWrapper:
 		return vec*shape[1] + shape[0]
 
 	def step(self, action):
+		# Normalize state and action
 		action_real = self.denormalize(action, self.action_shape)
 		state_real = self.denormalize(self.state, self.state_shape)
 
+		# Apply input to system
 		next_state_real = self.system.step(state_real, action_real)
 		reward_real = self.reward_func(state, next_state_real, action_real)
 
+		# Goal?
+		done = goal_func(next_state_real)
+
+		# Normalize outputs
 		next_state = self.normalize(next_state_real, self.state_shape)
 		reward = self.normalize(reward_real, self.reward_shape)
 
+		# Update system state
 		self.state = next_state
 
-		return next_state, reward
+		return next_state, reward, done
 
-	def reward_func(self, state, next_state, action):
-		reward = -(next_state[3]**2 + next_state[4]**2)
+	def reward_func(self, state, action, new_state):
+		reward = -(new_state[3]**2 + new_state[4]**2)
 		return reward
+
+	def goal_func(self, state):
+		return False
 
 	def render(self, state):
 		state_real = self.normalize(state, self.state_shape)
@@ -96,8 +113,8 @@ if __name__ == '__main__':
 			# simulate system for 1 timestep
 			state = env.state
 			action = agent.act(state)
-			next_state, reward = env.step(action)
-			agent.remember(state, action, reward, next_state)
+			next_state, reward, done = env.step(action)
+			agent.learn(state, action, reward, new_state, done)
 
 			# record data
 			state_log[i_exec, :, T] = state
