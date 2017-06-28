@@ -71,7 +71,9 @@ class EnvWrapper:
 
 	def render(self, state):
 		state_real = self.denormalize(state, self.state_shape)
-		print('({0:.2f},{1:.2f})\tdist={2:.2f}'.format(100*state_real[0], 100*state_real[1], 100*(state_real[0]**2 + state_real[1]**2)**0.5))
+		state_real_cm = 100*state_real
+		dist = 100*(state_real[0]**2 + state_real[1]**2)**0.5
+		print('pos=({0:5.2f},{1:5.2f}), \tdist={2:4.2f}'.format(state_real_cm[0], state_real_cm[1], dist), end='') 
 		return 0
 
 
@@ -98,7 +100,7 @@ if __name__ == '__main__':
 	state_log = np.empty([max_episodes, state_size, len(timeline)])
 
 	# run system
-	for i_ep in range(max_episodes):
+	for i_ep in range(max_episodes+1):
 		# "Haruki, reset."
 		env.reset()
 
@@ -108,12 +110,13 @@ if __name__ == '__main__':
 			state = env.state
 			action = agent.act(state)
 			new_state, reward, done = env.step(action)
-			agent.learn(state, action, reward, new_state, done)
+			loss = agent.learn(state, action, reward, new_state, done)
 
 			# record data
 			state_log[i_ep, :, T] = state
 
 			# display
-			print('ep={0:2d}, \tt={1:.3f}\t'.format(i_ep, timeline[T]), end='')
+			print('ep={0:2d}, \tt={1:.3f}, \t'.format(i_ep, timeline[T]), end='')
 			env.render(state)
+			print(', \tloss={}'.format(loss))
 

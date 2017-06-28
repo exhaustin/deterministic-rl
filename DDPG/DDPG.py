@@ -75,7 +75,7 @@ class DDPGLearner:
 		return action_out[0,:]
 
 	# Recieve reward and learn
-	def learn(self, state_in, action_in, reward, new_state_in, done, verbose='False'):
+	def learn(self, state_in, action_in, reward, new_state_in, done, verbose=False):
 		# reshape 1d array inputs into keras format
 		state = np.reshape(state_in, [1,-1])
 		action = np.reshape(action_in, [1,-1])
