@@ -81,19 +81,9 @@ if __name__ == '__main__':
 
 	# create environment
 	env = EnvWrapper()
-	state_size, action_size, timeline = env.sysInfo()
 
 	# create agent
-	agent = DDPGLearner(state_size, action_size,
-		BATCH_SIZE = 25,
-		TAU = 0.1,
-		LRA = 0.0001,
-		LRC = 0.001,
-		GAMMA = 0.99,
-		HIDDEN1 = 150,
-		HIDDEN2 = 300,
-		verbose = False
-	)
+	agent = 
 
 	# create log database
 	state_log = np.empty([max_episodes, state_size, len(timeline)])
