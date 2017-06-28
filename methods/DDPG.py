@@ -83,7 +83,10 @@ class DDPGLearner:
 		self.buff = ReplayBuffer(self.BUFFER_SIZE)
 
 	# Choose action
-	def act(self, state, toggle_explore=True):
+	def act(self, state_in, toggle_explore=True):
+		# reshape 1d array input into keras format
+		state = np.reshape(state_in, [1,-1])
+
 		# Diminishing exploration
 		if self.epsilon > 0:
 			self.epsilon -= 1/self.EXPLORE
@@ -100,10 +103,17 @@ class DDPGLearner:
 		# Record step
 		self.steps += 1
 
-		return np.clip(action_original + action_noise, -1, 1)
+		# Clip, reshape and output
+		action_out =  np.clip(action_original + action_noise, -1, 1)
+		return action_out[0,:]
 
 	# Recieve reward and learn
-	def learn(self, state, action, reward, new_state, done):
+	def learn(self, state_in, action_in, reward, new_state_in, done):
+		# reshape 1d array inputs into keras format
+		state = np.reshape(state_in, [1,-1])
+		action = np.reshape(action_in, [1,-1])
+		new_state = np.reshape(new_state_in, [1,-1])
+
 		# Save experience in buffer
 		self.buff.add(state, action, reward, new_state, done)
 

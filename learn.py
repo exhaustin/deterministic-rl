@@ -7,36 +7,6 @@ from DDPG import DDPGLearner
 sys.path.append('examples/')
 from spiral_example import SpiralSystem
 
-class AgentWrapper:
-	def __init__(self, state_size, action_size):
-		self.model = DDPGLearner(state_size, action_size,
-			BATCH_SIZE = 25,
-			TAU = 0.1,
-			LRA = 0.0001,
-			LRC = 0.001,
-			GAMMA = 0.99,
-			HIDDEN1 = 150,
-			HIDDEN2 = 300,
-			verbose = False
-		)
-
-	# Main language -> Agent language
-	def shape(self, vec):
-		return np.reshape(vec, [1,-1])
-
-	# Agent language -> Main language
-	def deshape(self, vec):
-		return vec[0,:]
-
-	def act(self, state):
-		return self.deshape( self.model.act(self.shape(state)) )
-
-	def learn(self, state, action, reward, new_state, done):
-		state1 = self.shape(state)
-		action1 = self.shape(action)
-		new_state1 = self.shape(new_state)
-		self.model.learn(state1, action1, reward, new_state1, done)
-
 class EnvWrapper:
 	state_size = 7
 	action_size = 3
@@ -114,7 +84,16 @@ if __name__ == '__main__':
 	state_size, action_size, timeline = env.sysInfo()
 
 	# create agent
-	agent = AgentWrapper(state_size, action_size)
+	agent = DDPGLearner(state_size, action_size,
+		BATCH_SIZE = 25,
+		TAU = 0.1,
+		LRA = 0.0001,
+		LRC = 0.001,
+		GAMMA = 0.99,
+		HIDDEN1 = 150,
+		HIDDEN2 = 300,
+		verbose = False
+	)
 
 	# create log database
 	state_log = np.empty([max_episodes, state_size, len(timeline)])
