@@ -3,7 +3,7 @@ import numpy as np
 import sys
 
 sys.path.append('methods/')
-from actorcritic import ACLearner
+from DDPG import DDPGLearner
 sys.path.append('examples/')
 from spiral_example import SpiralSystem
 
@@ -49,10 +49,6 @@ class EnvWrapper:
 	def denormalize(self, vec, shape):
 		return vec*shape[1] + shape[0]
 
-	def reward_func(self, state, next_state, action):
-		reward = -(next_state[3]**2 + next_state[4]**2)
-		return reward
-
 	def step(self, action):
 		action_real = self.denormalize(action, self.action_shape)
 		state_real = self.denormalize(self.state, self.state_shape)
@@ -66,6 +62,10 @@ class EnvWrapper:
 		self.state = next_state
 
 		return next_state, reward
+
+	def reward_func(self, state, next_state, action):
+		reward = -(next_state[3]**2 + next_state[4]**2)
+		return reward
 
 	def render(self, state):
 		state_real = self.normalize(state, self.state_shape)

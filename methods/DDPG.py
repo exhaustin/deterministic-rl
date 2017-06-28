@@ -10,13 +10,13 @@ from ActorCriticNet import ActorNetwork, CriticNetwork
 class ReplayBuffer:
 	def __init__(self, buffer_size):
 		self.buffer_size = buffer_size
-		self.num_experiences = 0
+		self.n_experiences = 0
 		self.buffer = deque()
 
 	def getBatch(self, batch_size):
 		# Randomly sample batch_size examples
 		if self.num_experience < batch_size:
-			return random.sample(self.buffer, self.num_experiences)
+			return random.sample(self.buffer, self.n_experiences)
 		else:
 			return random.sample(self.buffer, batch_size)
 	
@@ -25,19 +25,19 @@ class ReplayBuffer:
 
 	def add(self, state, action, reward, new_state, done):
 		experience = (state, action, reward, new_state, done)
-		if self.num_experience < self.buffer_size:
+		if self.n_experience < self.buffer_size:
 			self.buffer.append(experience)
-			self.num_experiences += 1
+			self.n_experiences += 1
 		else:
 			self.buffer.popleft()
 			self.buffer.append(experience)
 
 	def count(self):
-		return self.num_experiences
+		return self.n_experiences
 
 	def erase(self):
 		self.buffer = deque()
-		self.num_experiences = 0
+		self.n_experiences = 0
 
 class DDPGLearner:
 	def __init__(self, state_dim, action_dim,
@@ -84,6 +84,34 @@ class DDPGLearner:
 		return np.clip(action_original + action_noise, -1, 1)
 
 	# Recieve reward and learn
-	def learn(self, state, next_state, action, reward):
+	def learn(self, state, action, reward, new_state, done):
 		# Save data in buffer
-		# Learn as a batch when buffer is full	
+		buff.add(state, action, reward, new_state, done)
+
+		# Extract batch
+		batch = buff.getBatch(BATCH_SIZE)
+		states = np.asarray([e[0] for e in batch])
+		actions = np.asarray([e[1] for e in batch])
+		rewards = np.asarray([e[2] for e in batch])
+		new_states = np.asarray([e[3] for e in batch])
+		dones = np.asarray([e[4] for e in batch])
+
+		# Criticize
+		target_q_values = critic.target_model.predict([new_states, actor.target_model.predict(new_states)])
+		
+		# Train networks
+		y_t = np.copy(actions)
+		for k in range(len(batch)):
+			if dones[k]:
+				y_t[k] = rewards[k]
+			else:
+				y_t[k] = rewards[k] + GAMMA*target_q_values[k]
+	
+		loss += critic.model.train_on_batch([states, actions], y_t)
+		a_for_grad = actor.model.predict(states)
+		grads = critic.gradients(states, a_for_grad)
+		actor.train(states, grads)
+
+		# Update target networks
+		actor.target_train()
+		critic.target_train()
