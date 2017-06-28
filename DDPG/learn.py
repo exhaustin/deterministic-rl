@@ -91,8 +91,7 @@ if __name__ == '__main__':
 		LRC = 0.001,
 		GAMMA = 0.99,
 		HIDDEN1 = 150,
-		HIDDEN2 = 300,
-		verbose = False
+		HIDDEN2 = 300
 	)
 
 	# create log database

@@ -21,7 +21,6 @@ class DDPGLearner:
 
 		self.BATCH_SIZE=BATCH_SIZE
 		self.GAMMA = GAMMA
-		self.verbose = verbose
 
 		# Parameters and variables
 		np.random.seed(1337)
@@ -44,9 +43,9 @@ class DDPGLearner:
 		K.set_session(sess)
 
 		# Initialize actor and critic
-		if self.verbose: print('Creating actor network...')
+		if verbose: print('Creating actor network...')
 		self.actor = ActorNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRA, HIDDEN1, HIDDEN2)
-		if self.verbose: print('Creating critic network...')
+		if verbose: print('Creating critic network...')
 		self.critic = CriticNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRC, HIDDEN1, HIDDEN2)
 		self.buff = ReplayBuffer(self.BUFFER_SIZE)
 
@@ -76,7 +75,7 @@ class DDPGLearner:
 		return action_out[0,:]
 
 	# Recieve reward and learn
-	def learn(self, state_in, action_in, reward, new_state_in, done):
+	def learn(self, state_in, action_in, reward, new_state_in, done, verbose='False'):
 		# reshape 1d array inputs into keras format
 		state = np.reshape(state_in, [1,-1])
 		action = np.reshape(action_in, [1,-1])
@@ -115,7 +114,7 @@ class DDPGLearner:
 		self.critic.target_train()
 
 		# Print training info
-		if self.verbose:
+		if verbose:
 			print('steps={}, loss={}'.format(self.steps, loss))
 
 		# Return loss
