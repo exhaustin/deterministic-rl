@@ -76,10 +76,14 @@ class DDPGLearner:
 			epsilon = 0
 
 		# Ornstein-Uhlenbeck Process
-		OU = lambda x, mu, theta, sigma : theta*(mu - x) + sigma*np.random.randn(1)
+		mu = 0
+		theta = 0.15
+		sigma = 0.2
+		OU = lambda x : theta*(mu - x) + sigma*np.random.randn(1)
+
 		# Produce action
 		action_original = actor.model.predict(state)
-		action_noise = toggle_explore*epsilon*OU(action_original, 0, 0.15, 0.2)
+		action_noise = toggle_explore*epsilon*OU(action_original)
 
 		return np.clip(action_original + action_noise, -1, 1)
 
