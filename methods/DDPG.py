@@ -15,17 +15,17 @@ class ReplayBuffer:
 
 	def getBatch(self, batch_size):
 		# Randomly sample batch_size examples
-		if self.num_experience < batch_size:
-			return random.sample(self.buffer, self.n_experiences)
+		if self.n_experiences < batch_size:
+			return random.sample(self.buffer, self.n_experiences), self.n_experiences
 		else:
-			return random.sample(self.buffer, batch_size)
+			return random.sample(self.buffer, batch_size), batch_size
 	
 	def size(self):
 		return self.buffer_size
 
 	def add(self, state, action, reward, new_state, done):
 		experience = (state, action, reward, new_state, done)
-		if self.n_experience < self.buffer_size:
+		if self.n_experiences < self.buffer_size:
 			self.buffer.append(experience)
 			self.n_experiences += 1
 		else:
@@ -45,16 +45,29 @@ class DDPGLearner:
 		TAU=0.1,	#target network hyperparameter
 		LRA=0.0001,	#learning rate for actor
 		LRC=0.001,	#learning rate for critic
-		GAMMA = 0.99
-	):	
+		GAMMA=0.99,
+		HIDDEN1=300,
+		HIDDEN2=600,
+		verbose=True
+		):
+
+		self.BATCH_SIZE=BATCH_SIZE
+		self.GAMMA = GAMMA
+		self.verbose = verbose
+
 		# Parameters and variables
 		np.random.seed(1337)
+		self.BUFFER_SIZE = 100000
 		self.EXPLORE = 100000
-		self.reward = 0
-		self.done = False
-		self.step = 0
+
+		# Ornstein-Uhlenbeck Process
+		self.mu_OU = 0
+		self.theta_OU = 0.15
+		self.sigma_OU = 0.2
+
+		# Initialize variables
 		self.epsilon = 1
-		self.indicator = 0
+		self.steps = 0
 
 		# Tensorflow GPU optimization
 		config = tf.ConfigProto()
@@ -63,59 +76,69 @@ class DDPGLearner:
 		K.set_session(sess)
 
 		# Initialize actor and critic
-		actor = ActorNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRA)
-		critic = CriticNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRC)
-		buff = ReplayBuffer()
+		if self.verbose: print('Creating actor network...')
+		self.actor = ActorNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRA, HIDDEN1, HIDDEN2)
+		if self.verbose: print('Creating critic network...')
+		self.critic = CriticNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRC, HIDDEN1, HIDDEN2)
+		self.buff = ReplayBuffer(self.BUFFER_SIZE)
 
 	# Choose action
 	def act(self, state, toggle_explore=True):
 		# Diminishing exploration
-		if epsilon > 0:
-			epsilon -= 1/self.EXPLORE
+		if self.epsilon > 0:
+			self.epsilon -= 1/self.EXPLORE
 		else:
-			epsilon = 0
+			self.epsilon = 0
 
 		# Ornstein-Uhlenbeck Process
-		mu = 0
-		theta = 0.15
-		sigma = 0.2
-		OU = lambda x : theta*(mu - x) + sigma*np.random.randn(1)
+		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1)
 
 		# Produce action
-		action_original = actor.model.predict(state)
-		action_noise = toggle_explore*epsilon*OU(action_original)
+		action_original = self.actor.model.predict(state)
+		action_noise = toggle_explore*self.epsilon*OU(action_original)
+		
+		# Record step
+		self.steps += 1
 
 		return np.clip(action_original + action_noise, -1, 1)
 
 	# Recieve reward and learn
 	def learn(self, state, action, reward, new_state, done):
-		# Save data in buffer
-		buff.add(state, action, reward, new_state, done)
+		# Save experience in buffer
+		self.buff.add(state, action, reward, new_state, done)
 
 		# Extract batch
-		batch = buff.getBatch(BATCH_SIZE)
-		states = np.asarray([e[0] for e in batch])
-		actions = np.asarray([e[1] for e in batch])
+		batch, batchsize = self.buff.getBatch(self.BATCH_SIZE)
+		states = np.concatenate([e[0] for e in batch], axis=0)
+		actions = np.concatenate([e[1] for e in batch], axis=0)
 		rewards = np.asarray([e[2] for e in batch])
-		new_states = np.asarray([e[3] for e in batch])
+		new_states = np.concatenate([e[3] for e in batch], axis=0)
 		dones = np.asarray([e[4] for e in batch])
 
-		# Criticize
-		target_q_values = critic.target_model.predict([new_states, actor.target_model.predict(new_states)])
-		
-		# Train networks
-		y_t = np.copy(actions)
+		# Train critic
+		target_q_values = self.critic.target_model.predict([new_states, self.actor.target_model.predict(new_states)])	
+		y = np.empty([batchsize])
+		loss = 0
 		for k in range(len(batch)):
 			if dones[k]:
-				y_t[k] = rewards[k]
+				y[k] = rewards[k]
 			else:
-				y_t[k] = rewards[k] + GAMMA*target_q_values[k]
-	
-		loss += critic.model.train_on_batch([states, actions], y_t)
-		a_for_grad = actor.model.predict(states)
-		grads = critic.gradients(states, a_for_grad)
-		actor.train(states, grads)
+				y[k] = rewards[k] + self.GAMMA*target_q_values[k]	
+
+		loss = self.critic.model.train_on_batch([states, actions], y)
+
+		# Train actor
+		a_for_grad = self.actor.model.predict(states)
+		grads = self.critic.gradients(states, a_for_grad)
+		self.actor.train(states, grads)
 
 		# Update target networks
-		actor.target_train()
-		critic.target_train()
+		self.actor.target_train()
+		self.critic.target_train()
+
+		# Print training info
+		if self.verbose:
+			print('steps={}, loss={}'.format(self.steps, loss))
+
+		# Return loss
+		return loss

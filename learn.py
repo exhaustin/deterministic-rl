@@ -8,21 +8,34 @@ sys.path.append('examples/')
 from spiral_example import SpiralSystem
 
 class AgentWrapper:
-	# Agent parameters
-	BATCH_SIZE = 50
-	TAU = 0.1
-	LRA = 0.0001
-	LRC = 0.001
-	GAMMA = 0.99
-
 	def __init__(self, state_size, action_size):
-		model = DDPGLearner(state_size, action_size, BATCH_SIZE, TAU, LRA, LRC, GAMMA)
+		self.model = DDPGLearner(state_size, action_size,
+			BATCH_SIZE = 50,
+			TAU = 0.1,
+			LRA = 0.0001,
+			LRC = 0.001,
+			GAMMA = 0.99,
+			HIDDEN1 = 300,
+			HIDDEN2 = 600,
+			verbose = False
+		)
+
+	# Main language -> Agent language
+	def shape(self, vec):
+		return np.reshape(vec, [1,-1])
+
+	# Agent language -> Main language
+	def deshape(self, vec):
+		return vec[0,:]
 
 	def act(self, state):
-		return model.act(state)
+		return self.deshape( self.model.act(self.shape(state)) )
 
 	def learn(self, state, action, reward, new_state, done):
-		model.act(state, action, reward, new_state, done)
+		state1 = self.shape(state)
+		action1 = self.shape(action)
+		new_state1 = self.shape(new_state)
+		self.model.learn(state1, action1, reward, new_state1, done)
 
 class EnvWrapper:
 	state_size = 7
@@ -50,9 +63,11 @@ class EnvWrapper:
 	def reset(self):
 		self.state = self.init_state
 
+	# Env language -> Main language
 	def normalize(self, vec, shape):
 		return (vec - shape[0])/shape[1]
-	
+
+	# Agent language -> Main language
 	def denormalize(self, vec, shape):
 		return vec*shape[1] + shape[0]
 
@@ -62,20 +77,20 @@ class EnvWrapper:
 		state_real = self.denormalize(self.state, self.state_shape)
 
 		# Apply input to system
-		next_state_real = self.system.step(state_real, action_real)
-		reward_real = self.reward_func(state, next_state_real, action_real)
+		new_state_real = self.system.step(state_real, action_real)
+		reward_real = self.reward_func(state, action_real, new_state_real)
 
 		# Goal?
-		done = goal_func(next_state_real)
+		done = self.goal_func(new_state_real)
 
 		# Normalize outputs
-		next_state = self.normalize(next_state_real, self.state_shape)
+		new_state = self.normalize(new_state_real, self.state_shape)
 		reward = self.normalize(reward_real, self.reward_shape)
 
 		# Update system state
-		self.state = next_state
+		self.state = new_state
 
-		return next_state, reward, done
+		return new_state, reward, done
 
 	def reward_func(self, state, action, new_state):
 		reward = -(new_state[3]**2 + new_state[4]**2)
@@ -85,7 +100,8 @@ class EnvWrapper:
 		return False
 
 	def render(self, state):
-		state_real = self.normalize(state, self.state_shape)
+		state_real = self.denormalize(state, self.state_shape)
+		print('({0:.2f},{1:.2f})\tdist={2:.2f}'.format(100*state_real[0], 100*state_real[1], 100*(state_real[0]**2 + state_real[1]**2)**0.5))
 		return 0
 
 
@@ -104,7 +120,7 @@ if __name__ == '__main__':
 	state_log = np.empty([max_episodes, state_size, len(timeline)])
 
 	# run system
-	for i_exec in range(max_episodes):
+	for i_ep in range(max_episodes):
 		# "Haruki, reset."
 		env.reset()
 
@@ -113,9 +129,13 @@ if __name__ == '__main__':
 			# simulate system for 1 timestep
 			state = env.state
 			action = agent.act(state)
-			next_state, reward, done = env.step(action)
+			new_state, reward, done = env.step(action)
 			agent.learn(state, action, reward, new_state, done)
 
 			# record data
-			state_log[i_exec, :, T] = state
+			state_log[i_ep, :, T] = state
+
+			# display
+			print('ep={0:2d}, \tt={1:.3f}\t'.format(i_ep, timeline[T]), end='')
+			env.render(state)
 
