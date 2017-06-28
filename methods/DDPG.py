@@ -57,12 +57,12 @@ class DDPGLearner:
 
 		# Parameters and variables
 		np.random.seed(1337)
-		self.BUFFER_SIZE = 100000
-		self.EXPLORE = 100000
+		self.BUFFER_SIZE = 5000
+		self.EXPLORE = 1000
 
 		# Ornstein-Uhlenbeck Process
 		self.mu_OU = 0
-		self.theta_OU = 0.15
+		self.theta_OU = 0.1
 		self.sigma_OU = 0.2
 
 		# Initialize variables

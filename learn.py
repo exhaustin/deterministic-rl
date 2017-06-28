@@ -10,13 +10,13 @@ from spiral_example import SpiralSystem
 class AgentWrapper:
 	def __init__(self, state_size, action_size):
 		self.model = DDPGLearner(state_size, action_size,
-			BATCH_SIZE = 50,
+			BATCH_SIZE = 25,
 			TAU = 0.1,
 			LRA = 0.0001,
 			LRC = 0.001,
 			GAMMA = 0.99,
-			HIDDEN1 = 300,
-			HIDDEN2 = 600,
+			HIDDEN1 = 150,
+			HIDDEN2 = 300,
 			verbose = False
 		)
 
@@ -43,8 +43,8 @@ class EnvWrapper:
 	init_state = np.zeros(state_size)
 
 	# normalization params
-	state_mu = [0, 0, 0.025, 0, 0, 0, 0] 
-	state_sigma = [0.01, 0.01, 0.05, 1, 1, 1, 1]
+	state_mu = [0, 0, 0.025, 0, 0, 0, 0.25] 
+	state_sigma = [0.01, 0.01, 0.5, 1, 1, 1, 0.5]
 	action_mu = [0, 0, 0]
 	action_sigma = [0.005, 0.005, 0.005]
 	reward_mu = [0]
@@ -67,7 +67,7 @@ class EnvWrapper:
 	def normalize(self, vec, shape):
 		return (vec - shape[0])/shape[1]
 
-	# Agent language -> Main language
+	# Main language -> Env language
 	def denormalize(self, vec, shape):
 		return vec*shape[1] + shape[0]
 
