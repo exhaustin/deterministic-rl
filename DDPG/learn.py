@@ -1,6 +1,7 @@
-from matplotlib import pyplot as plt
 import numpy as np
 import sys
+from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 from DDPG import DDPGLearner
 
@@ -8,23 +9,19 @@ sys.path.append('../examples/')
 from spiral_example import SpiralSystem
 
 class EnvWrapper:
-	state_size = 7
-	action_size = 3
-	init_state = np.zeros(state_size)
-
-	# normalization params
-	state_mu = [0, 0, 0.025, 0, 0, 0, 0.25] 
-	state_sigma = [0.01, 0.01, 0.5, 1, 1, 1, 0.5]
-	action_mu = [0, 0, 0]
-	action_sigma = [0.005, 0.005, 0.005]
-	reward_mu = [0]
-	reward_sigma = [1]
-	state_shape = [np.array(state_mu), np.array(state_sigma)]
-	action_shape = [np.array(action_mu), np.array(action_sigma)]
-	reward_shape = [np.array(reward_mu), np.array(reward_sigma)]
-
 	def __init__(self):
+		# create environment
 		self.system = SpiralSystem()
+		self.state_size = self.system.state_size
+		self.action_size = self.system.action_size
+
+		# normalization params
+		state_shape = [self.system.state_mu, self.system.state_sigma]
+		action_shape = [self.system.action_mu, self.system.action_sigma]
+		reward_shape = [self.system.reward_mu, self.system.reward_sigma]
+
+		# initialize system
+		self.init_state = self.system.init_state
 		self.state = self.init_state
 
 	def sysInfo(self):
@@ -108,15 +105,25 @@ if __name__ == '__main__':
 		for T in range(len(timeline)):
 			# simulate system for 1 timestep
 			state = env.state
-			action = agent.act(state)
-			new_state, reward, done = env.step(action)
-			loss = agent.learn(state, action, reward, new_state, done)
+			#action = agent.act(state)
+			new_state, reward, done = env.step(action=np.array([0,0,0]))
+			#loss = agent.learn(state, action, reward, new_state, done)
 
 			# record data
 			state_log[i_ep, :, T] = state
 
 			# display
-			print('ep={0:2d}, \tt={1:.3f}, \t'.format(i_ep+1, timeline[T]), end='')
-			env.render(state)
-			print(', \tloss={}'.format(loss))
+			#print('ep={0:2d}, \tt={1:.3f}, \t'.format(i_ep+1, timeline[T]), end='')
+			#env.render(state)
+			#print(', \tloss={}'.format(loss))
 
+		# plot results
+		fig = plt.figure()
+		ax = fig.gca(projection='3d')
+
+		x = state_log[0,0,:]
+		y = state_log[0,1,:]
+		z = state_log[0,2,:]
+		ax.plot(x, y, z)
+
+		plt.show()
