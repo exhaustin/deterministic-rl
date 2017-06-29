@@ -100,7 +100,7 @@ if __name__ == '__main__':
 	state_log = np.empty([max_episodes, state_size, len(timeline)])
 
 	# run system
-	for i_ep in range(max_episodes+1):
+	for i_ep in range(max_episodes):
 		# "Haruki, reset."
 		env.reset()
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
 			state_log[i_ep, :, T] = state
 
 			# display
-			print('ep={0:2d}, \tt={1:.3f}, \t'.format(i_ep, timeline[T]), end='')
+			print('ep={0:2d}, \tt={1:.3f}, \t'.format(i_ep+1, timeline[T]), end='')
 			env.render(state)
 			print(', \tloss={}'.format(loss))
 
