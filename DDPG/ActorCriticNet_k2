@@ -4,7 +4,6 @@ from keras.initializers import normal, identity
 from keras.models import Sequential, Model
 #from keras.engine.traning import collect_trainable_weights
 from keras import layers
-from keras.layers import Input
 from keras.layers.core import Dense, Activation
 from keras.layers.merge import Add
 from keras.optimizers import Adam
@@ -52,13 +51,16 @@ class ActorNetwork:
 
 	def create_actor_network(self, state_dim, action_dim):
 		#print("Building actor model...")
-		S = Input(shape=[state_dim])
-		h0 = Dense(self.HIDDEN1_UNITS, activation='relu')(S)
-		h1 = Dense(self.HIDDEN2_UNITS, activation='relu')(h0)
-		V = Dense(action_dim, activation='tanh')(h1)
-		model = Model(input=S, output=V)
+		model = Sequential([
+			Dense(self.HIDDEN1_UNITS, input_dim=state_dim),
+			Activation('relu'),
+			Dense(self.HIDDEN2_UNITS), 
+			Activation('relu'),
+			Dense(action_dim),
+			Activation('tanh')
+		])
 
-		return model, model.trainable_weights, S
+		return model, model.trainable_weights
 
 		 
 

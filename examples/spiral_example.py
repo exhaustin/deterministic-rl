@@ -14,7 +14,7 @@ class SpiralSystem:
 
 	# movement parameters
 	v = 0.1
-	w = 6
+	w = 4*math.pi
 	r = 0.005
 
 	# compliance parameters
@@ -23,6 +23,17 @@ class SpiralSystem:
 	# input and output format
 	state_size = 7 	#x, y, z, Fx, Fy, Fz, t
 	action_size = 3
+
+	# initial state
+	init_state = np.array([r, 0, 0, 0, 0, 0, 0])
+
+	# normalization params
+	state_mu = [0, 0, 0.025, 0, 0, 0, 0.25]
+	state_sigma = [0.01, 0.01, 0.5, 1, 1, 1, 0.25]
+	action_mu = [0, 0, 0]
+	action_sigma = [0.005, 0.005, 0.005]
+	reward_mu = [0]
+	reward_sigma = [1]
 
 	# noise
 	noise_mu = np.asarray([x_bias,0,0])
@@ -42,7 +53,7 @@ class SpiralSystem:
 	# simulate one step
 	def step(self, state, action=np.zeros(action_size)):
 		time_state = np.asarray([state[6] + self.dt])
-		pos_state = self.pi_0(time_state) + action #+ random.gauss(self.noise_mu, self.noise_sigma)
+		pos_state = self.pi_0(time_state[0]) + action #+ random.gauss(self.noise_mu, self.noise_sigma)
 		force_state = np.asarray([self.k*pos_state[0], self.k*pos_state[1], 0])
 		state = np.concatenate([pos_state, force_state, time_state], axis=0)
 		return state
