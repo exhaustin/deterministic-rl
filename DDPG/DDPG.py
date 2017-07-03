@@ -6,6 +6,7 @@ from keras import backend as K
 
 from ActorCriticNet import ActorNetwork, CriticNetwork
 from ReplayBuffer import ReplayBuffer
+from PrioritizedReplayBuffer import PrioritizedReplayBuffer
 
 class DDPGLearner:
 	def __init__(self, state_dim, action_dim,
@@ -16,15 +17,16 @@ class DDPGLearner:
 		GAMMA=0.99,
 		HIDDEN1=300,
 		HIDDEN2=600,
-		verbose=True
+		verbose=True,
+		prioritized=False
 		):
 
 		self.BATCH_SIZE=BATCH_SIZE
 		self.GAMMA = GAMMA
+		self.prioritized = prioritized
 
 		# Parameters and variables
-		np.random.seed(1337)
-		self.BUFFER_SIZE = 5000
+		self.BUFFER_SIZE = 2000
 		self.EXPLORE = 1000
 
 		# Ornstein-Uhlenbeck Process
@@ -45,9 +47,14 @@ class DDPGLearner:
 		# Initialize actor and critic
 		if verbose: print('Creating actor network...')
 		self.actor = ActorNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRA, HIDDEN1, HIDDEN2)
+
 		if verbose: print('Creating critic network...')
 		self.critic = CriticNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRC, HIDDEN1, HIDDEN2)
-		self.buff = ReplayBuffer(self.BUFFER_SIZE)
+
+		if self.prioritized:
+			self.buff = PrioritizedReplayBuffer(self.BUFFER_SIZE)
+		else:	
+			self.buff = ReplayBuffer(self.BUFFER_SIZE)
 
 	# Choose action
 	def act(self, state_in, toggle_explore=True):
@@ -86,11 +93,11 @@ class DDPGLearner:
 
 		# Extract batch
 		batch, batchsize = self.buff.getBatch(self.BATCH_SIZE)
-		states = np.concatenate([e[0] for e in batch], axis=0)
-		actions = np.concatenate([e[1] for e in batch], axis=0)
-		rewards = np.asarray([e[2] for e in batch])
-		new_states = np.concatenate([e[3] for e in batch], axis=0)
-		dones = np.asarray([e[4] for e in batch])
+		states = np.concatenate([e[0][0] for e in batch], axis=0)
+		actions = np.concatenate([e[0][1] for e in batch], axis=0)
+		rewards = np.asarray([e[0][2] for e in batch])
+		new_states = np.concatenate([e[0][3] for e in batch], axis=0)
+		dones = np.asarray([e[0][4] for e in batch])
 
 		# Train critic
 		target_q_values = self.critic.target_model.predict([new_states, self.actor.target_model.predict(new_states)])	
@@ -103,6 +110,11 @@ class DDPGLearner:
 				y[k] = rewards[k] + self.GAMMA*target_q_values[k]	
 
 		loss = self.critic.model.train_on_batch([states, actions], y)
+
+		# Update loss in buffer for prioritized experience
+		if self.prioritized:
+			for e in batch:
+				e[1] = (1-self.GAMMA)*e[1] + self.GAMMA*loss
 
 		# Train actor
 		a_for_grad = self.actor.model.predict(states)

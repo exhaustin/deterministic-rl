@@ -54,7 +54,7 @@ class AgentWrapper:
 		new_state_N = self.normalize(new_state, self.state_shape)
 
 		# learn
-		loss self.agent.learn(state_N, action_N, reward_N, new_state_N, done)
+		loss = self.agent.learn(state_N, action_N, reward_N, new_state_N, done)
 
 		return loss
 

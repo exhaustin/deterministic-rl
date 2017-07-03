@@ -53,8 +53,8 @@ class ActorNetwork:
 	def create_actor_network(self, state_dim, action_dim):
 		#print("Building actor model...")
 		S = Input(shape=[state_dim])
-		h0 = Dense(self.HIDDEN1_UNITS, activation='relu')(S)
-		h1 = Dense(self.HIDDEN2_UNITS, activation='relu')(h0)
+		h0 = Dense(self.HIDDEN1_UNITS, activation='elu')(S)
+		h1 = Dense(self.HIDDEN2_UNITS, activation='elu')(h0)
 		V = Dense(action_dim, activation='tanh')(h1)
 		model = Model(input=S, output=V)
 
@@ -102,14 +102,14 @@ class CriticNetwork:
 	def create_critic_network(self, state_dim, action_dim):
 		#print('Building critic model...')
 		S = Input(shape=[state_dim])
-		w1 = Dense(self.HIDDEN1_UNITS, activation='relu')(S)
+		w1 = Dense(self.HIDDEN1_UNITS, activation='elu')(S)
 		h1 = Dense(self.HIDDEN2_UNITS, activation='linear')(w1)
 
 		A = Input(shape=[action_dim])
 		a1 = Dense(self.HIDDEN2_UNITS, activation='linear')(A)
 
 		h2 = layers.add([h1,a1])
-		h3 = Dense(self.HIDDEN2_UNITS, activation='relu')(h2)
+		h3 = Dense(self.HIDDEN2_UNITS, activation='elu')(h2)
 		V = Dense(1, activation='linear')(h3) #output_dim = action_dim or 1?
 
 		model = Model(input=[S,A], output=V)

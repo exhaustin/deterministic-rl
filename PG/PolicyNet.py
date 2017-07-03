@@ -53,8 +53,8 @@ class PolicyNetwork:
 	def create_actor_network(self, state_dim, action_dim):
 		#print("Building actor model...")
 		S = Input(shape=[state_dim])
-		h0 = Dense(self.HIDDEN1_UNITS, activation='relu')(S)
-		h1 = Dense(self.HIDDEN2_UNITS, activation='relu')(h0)
+		h0 = Dense(self.HIDDEN1_UNITS, activation='elu')(S)
+		h1 = Dense(self.HIDDEN2_UNITS, activation='elu')(h0)
 		V = Dense(action_dim, activation='tanh')(h1)
 		model = Model(input=S, output=V)
 
