@@ -3,7 +3,7 @@ import sys
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from DDPG import DDPGLearner
+from HillClimb import HillClimbLearner
 
 sys.path.append('../examples/')
 from spiral_example import SpiralSystem
@@ -11,7 +11,7 @@ from spiral_example import SpiralSystem
 # Formats inputs to and outputs from agents, and maybe performs normalization
 class AgentWrapper:
 	def __init__(self, env):
-		self.agent = DDPGLearner(env.ob_state_size, env.action_size,
+		self.agent = HillClimbLearner(env.ob_state_size, env.action_size,
 			BATCH_SIZE = 25,
 			TAU = 0.1,
 			LRA = 0.0001,
