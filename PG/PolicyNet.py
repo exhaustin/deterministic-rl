@@ -27,11 +27,13 @@ class PolicyNetwork:
 		K.set_session(self.sess)
 
 		# create the model
-		self.model, self.weights, self.state = self.create_actor_network(state_dim, action_dim)
-		self.target_model, self.target_weights, self.target_state = self.create_actor_network(state_dim, action_dim)
+		self.model, self.weights, self.state = self.create_policy_network(state_dim, action_dim)
+		self.target_model, self.target_weights, self.target_state = self.create_policy_network(state_dim, action_dim)
+
 		self.action_gradient = tf.placeholder(tf.float32,[None, action_dim])
 		self.params_grad = tf.gradients(self.model.output, self.weights, -self.action_gradient)
 		grads = zip(self.params_grad, self.weights)
+
 		self.optimize = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(grads)
 		self.sess.run(tf.global_variables_initializer())
 
@@ -44,19 +46,19 @@ class PolicyNetwork:
 		)
 
 	def target_train(self):
-		actor_weights = self.model.get_weights()
-		actor_target_weights = self.target_model.get_weights()
-		for i in range(len(actor_weights)):
-			actor_target_weights[i] = self.TAU*actor_weights[i] + (1-self.TAU)*actor_target_weights[i]
-		self.target_model.set_weights(actor_target_weights)
+		policy_weights = self.model.get_weights()
+		policy_target_weights = self.target_model.get_weights()
+		for i in range(len(policy_weights)):
+			policy_target_weights[i] = self.TAU*policy_weights[i] + (1-self.TAU)*policy_target_weights[i]
+		self.target_model.set_weights(policy_target_weights)
 
-	def create_actor_network(self, state_dim, action_dim):
-		#print("Building actor model...")
+	def create_policy_network(self, state_dim, action_dim):
+		#print("Building policy model...")
 		S = Input(shape=[state_dim])
 		h0 = Dense(self.HIDDEN1_UNITS, activation='elu', initializer=TruncatedNormal(0.0, 1e-4))(S)
 		h1 = Dense(self.HIDDEN2_UNITS, activation='elu', initializer=TruncatedNormal(0.0, 1e-4))(h0)
 		V = Dense(action_dim, activation='tanh')(h1)
-		model = Model(input=S, output=V)
+		model = Model(inputs=S, outputs=V)
 
 		return model, model.trainable_weights, S
 

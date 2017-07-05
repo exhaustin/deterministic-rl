@@ -17,17 +17,17 @@ class DDPGLearner:
 		GAMMA=0.99,
 		HIDDEN1=300,
 		HIDDEN2=600,
+		EXPLORE=2000,
+		BUFFER_SIZE=2000,
 		verbose=True,
 		prioritized=False
 		):
 
 		self.BATCH_SIZE=BATCH_SIZE
 		self.GAMMA = GAMMA
+		self.EXPLORE = EXPLORE
+		self.BUFFER_SIZE = BUFFER_SIZE
 		self.prioritized = prioritized
-
-		# Parameters and variables
-		self.BUFFER_SIZE = 2000
-		self.EXPLORE = 1000
 
 		# Ornstein-Uhlenbeck Process
 		self.mu_OU = 0

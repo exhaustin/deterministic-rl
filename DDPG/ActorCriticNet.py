@@ -111,10 +111,10 @@ class CriticNetwork:
 		#print('Building critic model...')
 		S = Input(shape=[state_dim])
 		w1 = Dense(self.HIDDEN1_UNITS, activation='elu')(S)
-		h1 = Dense(self.HIDDEN2_UNITS, activation='linear')(w1)
+		h1 = Dense(self.HIDDEN2_UNITS, activation='tanh')(w1)
 
 		A = Input(shape=[action_dim])
-		a1 = Dense(self.HIDDEN2_UNITS, activation='linear')(A)
+		a1 = Dense(self.HIDDEN2_UNITS, activation='tanh')(A)
 
 		h2 = layers.concatenate([h1,a1])
 		h3 = Dense(self.HIDDEN2_UNITS, activation='elu')(h2)
