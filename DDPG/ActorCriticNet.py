@@ -1,12 +1,11 @@
 import numpy as np
 import math
-from keras.initializers import normal, identity, TruncatedNormal
+from keras.initializers import TruncatedNormal
 from keras.models import Sequential, Model
 #from keras.engine.traning import collect_trainable_weights
 from keras import layers
 from keras.layers import Input
 from keras.layers.core import Dense, Activation
-from keras.layers.merge import Add
 from keras.optimizers import Adam
 import tensorflow as tf
 import keras.backend as K
@@ -29,9 +28,11 @@ class ActorNetwork:
 		# create the model
 		self.model, self.weights, self.state = self.create_actor_network(state_dim, action_dim)
 		self.target_model, self.target_weights, self.target_state = self.create_actor_network(state_dim, action_dim)
+
 		self.action_gradient = tf.placeholder(tf.float32,[None, action_dim])
 		self.params_grad = tf.gradients(self.model.output, self.weights, -self.action_gradient)
 		grads = zip(self.params_grad, self.weights)
+
 		self.optimize = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(grads)
 		self.sess.run(tf.global_variables_initializer())
 
@@ -52,11 +53,18 @@ class ActorNetwork:
 
 	def create_actor_network(self, state_dim, action_dim):
 		#print("Building actor model...")
+		"""	
+		model = Sequential([
+			Dense(self.HIDDEN1_UNITS, input_dim=state_dim, activation='elu', kernel_initializer=TruncatedNormal(0.0,1e-4), name="S"),
+			Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=TruncatedNormal(0.0,1e-4)),
+			Dense(action_dim, activation='tanh', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-4)),
+		])
+		"""
 		S = Input(shape=[state_dim])
 		h0 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-3))(S)
 		h1 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-3))(h0)
 		V = Dense(action_dim, activation='tanh', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-3))(h1)
-		model = Model(input=S, output=V)
+		model = Model(inputs=S, outputs=V)
 
 		return model, model.trainable_weights, S
 
@@ -108,11 +116,11 @@ class CriticNetwork:
 		A = Input(shape=[action_dim])
 		a1 = Dense(self.HIDDEN2_UNITS, activation='linear')(A)
 
-		h2 = layers.add([h1,a1])
+		h2 = layers.concatenate([h1,a1])
 		h3 = Dense(self.HIDDEN2_UNITS, activation='elu')(h2)
 		V = Dense(1, activation='linear')(h3) #output_dim = action_dim or 1?
 
-		model = Model(input=[S,A], output=V)
+		model = Model(inputs=[S,A], outputs=V)
 		adam = Adam(lr=self.LEARNING_RATE)
 		model.compile(loss='mse', optimizer=adam)
 	
