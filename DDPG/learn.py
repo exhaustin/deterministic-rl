@@ -32,7 +32,7 @@ if __name__ == '__main__':
 	agent.peek(env)
 
 	# create log database
-	state_log = np.empty([max_episodes, 3, 500])
+	state_log = np.empty([max_episodes, 3, 500+1])
 
 	# run system
 	for i_ep in range(max_episodes):

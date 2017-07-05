@@ -28,7 +28,6 @@ class SpiralPath:
 	def step(self, action):
 		# Simulate
 		new_state = self.sys.step(self.state, action)
-		self.state = new_state
 
 		# Done?
 		done = self.goal_func(new_state)

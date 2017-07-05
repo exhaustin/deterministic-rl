@@ -97,7 +97,7 @@ class DDPGLearner:
 	def act(self, state_in, toggle_explore=True):
 		# env format -> agent format
 		state = self.normalize(state_in, 'state')
-		state = np.reshape(state_in, [1,-1])
+		state = np.reshape(state, [1,-1])
 
 		# Diminishing exploration
 		if self.epsilon > 0:
@@ -127,9 +127,9 @@ class DDPGLearner:
 		reward = self.normalize(reward_in, 'reward')
 		new_state = self.normalize(new_state_in, 'state')
 
-		state = np.reshape(state_in, [1,-1])
-		action = np.reshape(action_in, [1,-1])
-		new_state = np.reshape(new_state_in, [1,-1])
+		state = np.reshape(state, [1,-1])
+		action = np.reshape(action, [1,-1])
+		new_state = np.reshape(new_state, [1,-1])
 
 		# Save experience in buffer
 		self.buff.add(state, action, reward, new_state, done)
