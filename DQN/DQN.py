@@ -6,7 +6,7 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 
 # Our hero
-class DQN:
+class DQNLearner:
 	def __init__(self, state_size, action_size, params=[0.95, 1, 0.1, 0.995, 0.001, 24]):
 		# learning parameters
 		self.gamma = params[0] #discount rate

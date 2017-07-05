@@ -56,9 +56,47 @@ class DDPGLearner:
 		else:	
 			self.buff = ReplayBuffer(self.BUFFER_SIZE)
 
+	# Get information from the environment
+	def peek(self, env):
+		self.state_mu = env.observation_mu
+		self.action_mu = env.action_mu
+		self.reward_mu = env.reward_mu
+		self.state_sigma = env.observation_sigma
+		self.action_sigma = env.action_sigma
+		self.reward_sigma = env.reward_sigma
+
+	# Env language -> Agent language
+	def normalize(self, vec, vtype):
+		if vtype == 'state':
+			mu = self.state_mu
+			sigma = self.state_sigma
+		elif vtype == 'action':
+			mu = self.action_mu
+			sigma = self.action_sigma
+		elif vtype == 'reward':
+			mu = self.reward_mu
+			sigma = self.reward_sigma
+
+		return (vec - mu)/sigma
+
+	# Agent language -> Env language
+	def denormalize(self, vec, vtype):
+		if vtype == 'state':
+			mu = self.state_mu
+			sigma = self.state_sigma
+		elif vtype == 'action':
+			mu = self.action_mu
+			sigma = self.action_sigma
+		elif vtype == 'reward':
+			mu = self.reward_mu
+			sigma = self.reward_sigma
+
+		return vec*sigma + mu
+
 	# Choose action
 	def act(self, state_in, toggle_explore=True):
-		# reshape 1d array input into keras format
+		# env format -> agent format
+		state = self.normalize(state_in, 'state')
 		state = np.reshape(state_in, [1,-1])
 
 		# Diminishing exploration
@@ -79,11 +117,16 @@ class DDPGLearner:
 
 		# Clip, reshape and output
 		action_out =  np.clip(action_original + action_noise, -1, 1)
-		return action_out[0,:]
+		return self.denormalize(action_out[0,:], 'action')
 
 	# Recieve reward and learn
-	def learn(self, state_in, action_in, reward, new_state_in, done, verbose=False):
-		# reshape 1d array inputs into keras format
+	def learn(self, state_in, action_in, reward_in, new_state_in, done, verbose=False):
+		# env format -> agent format
+		state = self.normalize(state_in, 'state')
+		action = self.normalize(action_in, 'action')
+		reward = self.normalize(reward_in, 'reward')
+		new_state = self.normalize(new_state_in, 'state')
+
 		state = np.reshape(state_in, [1,-1])
 		action = np.reshape(action_in, [1,-1])
 		new_state = np.reshape(new_state_in, [1,-1])

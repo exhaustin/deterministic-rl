@@ -37,11 +37,11 @@ class PolicyNetwork:
 		self.optimize = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(grads)
 		self.sess.run(tf.global_variables_initializer())
 
-	def train(self, states, action_grads):
+	def train(self, states, update_grads):
 		self.sess.run(self.optimize,
 			feed_dict={
 				self.state: states,
-				self.action_gradient: action_grads
+				self.action_gradient: update_grads
 			}
 		)
 
