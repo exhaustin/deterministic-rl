@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from keras.initializers import normal, identity
+from keras.initializers import TruncatedNormal
 from keras.models import Sequential, Model
 #from keras.engine.traning import collect_trainable_weights
 from keras import layers
@@ -53,8 +53,8 @@ class PolicyNetwork:
 	def create_actor_network(self, state_dim, action_dim):
 		#print("Building actor model...")
 		S = Input(shape=[state_dim])
-		h0 = Dense(self.HIDDEN1_UNITS, activation='elu')(S)
-		h1 = Dense(self.HIDDEN2_UNITS, activation='elu')(h0)
+		h0 = Dense(self.HIDDEN1_UNITS, activation='elu', initializer=TruncatedNormal(0.0, 1e-4))(S)
+		h1 = Dense(self.HIDDEN2_UNITS, activation='elu', initializer=TruncatedNormal(0.0, 1e-4))(h0)
 		V = Dense(action_dim, activation='tanh')(h1)
 		model = Model(input=S, output=V)
 

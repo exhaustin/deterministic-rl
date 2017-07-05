@@ -5,7 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from DDPG import DDPGLearner
 
-sys.path.append('../examples/')
+sys.path.append('../environments/')
 from spiral_example import SpiralSystem
 
 # Formats inputs to and outputs from agents, and maybe performs normalization
