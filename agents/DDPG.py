@@ -4,26 +4,30 @@ import random
 import tensorflow as tf
 from keras import backend as K
 
-from .PolicyNet import PolicyNetwork
-from .ReplayBuffer import ReplayBuffer
+from .networks.ActorCriticNet import ActorNetwork, CriticNetwork
+from .misc.ReplayBuffer import ReplayBuffer
+from .misc.PrioritizedReplayBuffer import PrioritizedReplayBuffer
 
-class REINFORCE_Agent:
+class DDPG_Agent:
 	def __init__(self, state_dim, action_dim,
 		BATCH_SIZE=50,
 		TAU=0.1,	#target network hyperparameter
-		LR=0.0001,	#learning rate
+		LRA=0.0001,	#learning rate for actor
+		LRC=0.001,	#learning rate for critic
 		GAMMA=0.99,
 		HIDDEN1=300,
 		HIDDEN2=600,
 		EXPLORE=2000,
 		BUFFER_SIZE=2000,
 		verbose=True,
+		prioritized=False
 		):
 
 		self.BATCH_SIZE=BATCH_SIZE
 		self.GAMMA = GAMMA
 		self.EXPLORE = EXPLORE
 		self.BUFFER_SIZE = BUFFER_SIZE
+		self.prioritized = prioritized
 
 		# Ornstein-Uhlenbeck Process
 		self.mu_OU = 0
@@ -41,10 +45,16 @@ class REINFORCE_Agent:
 		K.set_session(sess)
 
 		# Initialize actor and critic
-		if verbose: print('Creating policy network...')
-		self.policy = PolicyNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LR, HIDDEN1, HIDDEN2)
+		if verbose: print('Creating actor network...')
+		self.actor = ActorNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRA, HIDDEN1, HIDDEN2)
 
-		self.buff = ReplayBuffer(BUFFER_SIZE)
+		if verbose: print('Creating critic network...')
+		self.critic = CriticNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRC, HIDDEN1, HIDDEN2)
+
+		if self.prioritized:
+			self.buff = PrioritizedReplayBuffer(self.BUFFER_SIZE)
+		else:	
+			self.buff = ReplayBuffer(self.BUFFER_SIZE)
 
 	# Get information from the environment
 	def peek(self, env):
@@ -99,7 +109,7 @@ class REINFORCE_Agent:
 		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1)
 
 		# Produce action
-		action_original = self.policy.model.predict(state)
+		action_original = self.actor.model.predict(state)
 		action_noise = toggle_explore*self.epsilon*OU(action_original)
 		
 		# Record step
@@ -132,17 +142,8 @@ class REINFORCE_Agent:
 		new_states = np.concatenate([e[0][3] for e in batch], axis=0)
 		dones = np.asarray([e[0][4] for e in batch])
 
-		# REINFORCE: REward Increment = Nonnegative Factor x Offset Reinforcement x Characteristic Eligibility
-
-		# Update policy
-		a_for_grad = self.policy.model.predict(states)
-		grads = self.critic.gradients(states, a_for_grad)
-		self.policy.train(states, grads)
-
-
-
 		# Train critic
-		target_q_values = self.critic.target_model.predict([new_states, self.policy.target_model.predict(new_states)])	
+		target_q_values = self.critic.target_model.predict([new_states, self.actor.target_model.predict(new_states)])	
 		y = np.empty([batchsize])
 		loss = 0
 		for k in range(len(batch)):
@@ -163,11 +164,9 @@ class REINFORCE_Agent:
 		grads = self.critic.gradients(states, a_for_grad)
 		self.actor.train(states, grads)
 
-
-
-
 		# Update target networks
-		self.policy.target_train()
+		self.actor.target_train()
+		self.critic.target_train()
 
 		# Print training info
 		if verbose:
