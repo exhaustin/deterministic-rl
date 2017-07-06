@@ -2,7 +2,7 @@ import numpy as np
 from collections import deque
 import random
 
-from DDPG.random_weighted import weighted_sample
+from .random_weighted import weighted_sample
 
 class PrioritizedReplayBuffer:
 	def __init__(self, buffer_size):
