@@ -18,14 +18,17 @@ class SpiralPath:
 
 		# normalization params
 		self.observation_mu = [0, 0, 0.025, 0, 0, 0, 0.25]
-		self.observation_sigma = [0.01, 0.01, 0.5, 1, 1, 1, 0.25]
+		self.observation_sigma = [0.01, 0.01, 0.5, 1, 1, 1, 0.5]
 		self.action_mu = [0, 0, 0]
 		self.action_sigma = [0.005, 0.005, 0.005]
 		self.reward_mu = [0]
 		self.reward_sigma = [1]
 
 	# Simulate system for one timestep
-	def step(self, action):
+	def step(self, action=None):
+		if action is None:
+			action = np.zeros(self.action_dim)
+
 		# Simulate
 		new_state = self.sys.step(self.state, action)
 
@@ -121,10 +124,7 @@ class PathSystem:
 
 
 	# simulate system for one step
-	def step(self, state, action=None):
-		if action is None:
-			action = np.zeros(self.action_size)
-
+	def step(self, state, action):
 		t_state = np.asarray([state[3] + self.dt])
 		t_idx = (np.abs(self.timeline - t_state)).argmin()
 
