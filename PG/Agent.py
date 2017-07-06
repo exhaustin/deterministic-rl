@@ -4,11 +4,9 @@ import random
 import tensorflow as tf
 from keras import backend as K
 
-from ActorCriticNet import ActorNetwork, CriticNetwork
-from ReplayBuffer import ReplayBuffer
-from PrioritizedReplayBuffer import PrioritizedReplayBuffer
+from REINFORCE.PolicyNet import PolicyNetwork
 
-class DDPGLearner:
+class REINFORCE_Agent:
 	def __init__(self, state_dim, action_dim,
 		BATCH_SIZE=50,
 		TAU=0.1,	#target network hyperparameter
@@ -20,14 +18,12 @@ class DDPGLearner:
 		EXPLORE=2000,
 		BUFFER_SIZE=2000,
 		verbose=True,
-		prioritized=False
 		):
 
 		self.BATCH_SIZE=BATCH_SIZE
 		self.GAMMA = GAMMA
 		self.EXPLORE = EXPLORE
 		self.BUFFER_SIZE = BUFFER_SIZE
-		self.prioritized = prioritized
 
 		# Ornstein-Uhlenbeck Process
 		self.mu_OU = 0
@@ -45,16 +41,8 @@ class DDPGLearner:
 		K.set_session(sess)
 
 		# Initialize actor and critic
-		if verbose: print('Creating actor network...')
+		if verbose: print('Creating policy network...')
 		self.actor = ActorNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRA, HIDDEN1, HIDDEN2)
-
-		if verbose: print('Creating critic network...')
-		self.critic = CriticNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRC, HIDDEN1, HIDDEN2)
-
-		if self.prioritized:
-			self.buff = PrioritizedReplayBuffer(self.BUFFER_SIZE)
-		else:	
-			self.buff = ReplayBuffer(self.BUFFER_SIZE)
 
 	# Get information from the environment
 	def peek(self, env):

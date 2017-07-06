@@ -3,10 +3,8 @@ import sys
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from DDPG import DDPGLearner
-
-sys.path.append('../environments/')
-from SpiralPath import SpiralPath
+from REINFORCE.Agent import REINFORCE_Agent
+from envs.SpiralPath import SpiralPath
 
 if __name__ == '__main__':
 	# training parameters
@@ -19,7 +17,7 @@ if __name__ == '__main__':
 	action_dim = env.action_dim
 
 	# create agent
-	agent = DDPGLearner(observation_dim, action_dim,
+	agent = REINFORCE_Agent(observation_dim, action_dim,
 		BATCH_SIZE = 25,
 		TAU = 0.1,
 		LRA = 0.0001,

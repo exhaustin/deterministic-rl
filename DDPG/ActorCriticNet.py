@@ -61,9 +61,9 @@ class ActorNetwork:
 		])
 		"""
 		S = Input(shape=[state_dim])
-		h0 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-3))(S)
-		h1 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-3))(h0)
-		V = Dense(action_dim, activation='tanh', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-3))(h1)
+		h0 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-4))(S)
+		h1 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-4))(h0)
+		V = Dense(action_dim, activation='tanh', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-4))(h1)
 		model = Model(inputs=S, outputs=V)
 
 		return model, model.trainable_weights, S
@@ -110,15 +110,15 @@ class CriticNetwork:
 	def create_critic_network(self, state_dim, action_dim):
 		#print('Building critic model...')
 		S = Input(shape=[state_dim])
-		w1 = Dense(self.HIDDEN1_UNITS, activation='elu')(S)
-		h1 = Dense(self.HIDDEN2_UNITS, activation='tanh')(w1)
+		w1 = Dense(self.HIDDEN1_UNITS, activation='linear', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-2))(S)
 
 		A = Input(shape=[action_dim])
-		a1 = Dense(self.HIDDEN2_UNITS, activation='tanh')(A)
+		a1 = Dense(self.HIDDEN2_UNITS, activation='linear', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-2))(A)
 
-		h2 = layers.concatenate([h1,a1])
-		h3 = Dense(self.HIDDEN2_UNITS, activation='elu')(h2)
-		V = Dense(1, activation='linear')(h3) #output_dim = action_dim or 1?
+		h1 = layers.concatenate([w1,a1])
+		h2 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-2))(h1)
+		h3 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-2))(h2)
+		V = Dense(1, activation='linear')(h3) 
 
 		model = Model(inputs=[S,A], outputs=V)
 		adam = Adam(lr=self.LEARNING_RATE)
