@@ -16,28 +16,28 @@ def weighted_choice(seq, weights):
 
 	return seq[index]
 
-def weighted_sample(pop, weights, k):
+def weighted_sample(pop, weights, k, unique=True):
 	sample = []
-	idx_sample = set()
 	pop_idxlist = list(range(len(pop)))
-	weights = list(weights)
+	w_0 = [True if x else False for x in weights]
+
+	if unique and sum(w_0) < k:
+		unique = False
+
 	weights = [x / sum(weights) for x in weights]
+
+	if unique:
+		idx_sample = set()
+	else:
+		idx_sample = list()
 
 
 	while len(idx_sample) < k:
-		choice = weighted_choice(pop_idxlist, weights)
-		index = pop_idxlist.index(choice)
-
-		# choose between two methods
-		if len(pop) < 20*k:
+		choice = np.random.choice(pop_idxlist, p=weights)
+		if unique:
 			idx_sample.add(choice)
-
-			weights.pop(index)
-			pop_idxlist.remove(choice)
-			weights = [x / sum(weights) for x in weights]
 		else:
-			if choice not in idx_sample:
-				idx_sample.add(choice)
+			idx_sample.append(choice)
 
 	for idx in idx_sample:
 		sample.append(pop[idx])

@@ -33,9 +33,9 @@ class PrioritizedReplayBuffer:
 				w.append(e[1])
 
 			if self.n_experiences < batch_size:
-				return weighted_sample(self.buffer, w, self.n_experiences), self.n_experiences
+				return weighted_sample(self.buffer, w, self.n_experiences, unique=False), self.n_experiences
 			else:
-				return weighted_sample(self.buffer, w, batch_size), batch_size
+				return weighted_sample(self.buffer, w, batch_size, unique=False), batch_size
 	
 	def size(self):
 		return self.buffer_size
