@@ -40,11 +40,10 @@ class PrioritizedReplayBuffer:
 	def size(self):
 		return self.buffer_size
 
-	def add(self, state, action, reward, new_state, done, loss=None):
-		if loss is None:
-			loss = self.max_loss
+	def add(self, experience):
+		if experience[1] is None:
+			experience[1] = self.max_loss
 
-		experience = [(state, action, reward, new_state, done), loss]
 		if self.n_experiences < self.buffer_size:
 			self.buffer.append(experience)
 			self.n_experiences += 1

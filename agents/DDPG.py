@@ -4,7 +4,7 @@ import random
 import tensorflow as tf
 from keras import backend as K
 
-from .networks.ActorCriticNet import ActorNetwork, CriticNetwork
+from .networks.ActorCritic_target_v0 import ActorNetwork, CriticNetwork
 from .misc.ReplayBuffer import ReplayBuffer
 from .misc.PrioritizedReplayBuffer import PrioritizedReplayBuffer
 
@@ -56,43 +56,6 @@ class DDPG_Agent:
 		else:	
 			self.buff = ReplayBuffer(self.BUFFER_SIZE)
 
-	# Get information from the environment
-	def peek(self, env):
-		self.state_mu = env.observation_mu
-		self.action_mu = env.action_mu
-		self.reward_mu = env.reward_mu
-		self.state_sigma = env.observation_sigma
-		self.action_sigma = env.action_sigma
-		self.reward_sigma = env.reward_sigma
-
-	# Env language -> Agent language
-	def normalize(self, vec, vtype):
-		if vtype == 'state':
-			mu = self.state_mu
-			sigma = self.state_sigma
-		elif vtype == 'action':
-			mu = self.action_mu
-			sigma = self.action_sigma
-		elif vtype == 'reward':
-			mu = self.reward_mu
-			sigma = self.reward_sigma
-
-		return (vec - mu)/sigma
-
-	# Agent language -> Env language
-	def denormalize(self, vec, vtype):
-		if vtype == 'state':
-			mu = self.state_mu
-			sigma = self.state_sigma
-		elif vtype == 'action':
-			mu = self.action_mu
-			sigma = self.action_sigma
-		elif vtype == 'reward':
-			mu = self.reward_mu
-			sigma = self.reward_sigma
-
-		return vec*sigma + mu
-
 	# Choose action
 	def act(self, state_in, toggle_explore=True):
 		# env format -> agent format
@@ -109,7 +72,7 @@ class DDPG_Agent:
 		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1)
 
 		# Produce action
-		action_original = self.actor.model.predict(state)
+		action_original = self.actor.target_model.predict(state)
 		action_noise = toggle_explore*self.epsilon*OU(action_original)
 		
 		# Record step
@@ -132,7 +95,7 @@ class DDPG_Agent:
 		new_state = np.reshape(new_state, [1,-1])
 
 		# Save experience in buffer
-		self.buff.add(state, action, reward, new_state, done)
+		self.buff.add([(state, action, reward, new_state, done), None])
 
 		# Extract batch
 		batch, batchsize = self.buff.getBatch(self.BATCH_SIZE)
@@ -174,3 +137,40 @@ class DDPG_Agent:
 
 		# Return loss
 		return loss
+
+	# Get information from the environment
+	def peek(self, env):
+		self.state_mu = env.observation_mu
+		self.action_mu = env.action_mu
+		self.reward_mu = env.reward_mu
+		self.state_sigma = env.observation_sigma
+		self.action_sigma = env.action_sigma
+		self.reward_sigma = env.reward_sigma
+
+	# Env language -> Agent language
+	def normalize(self, vec, vtype):
+		if vtype == 'state':
+			mu = self.state_mu
+			sigma = self.state_sigma
+		elif vtype == 'action':
+			mu = self.action_mu
+			sigma = self.action_sigma
+		elif vtype == 'reward':
+			mu = self.reward_mu
+			sigma = self.reward_sigma
+
+		return (vec - mu)/sigma
+
+	# Agent language -> Env language
+	def denormalize(self, vec, vtype):
+		if vtype == 'state':
+			mu = self.state_mu
+			sigma = self.state_sigma
+		elif vtype == 'action':
+			mu = self.action_mu
+			sigma = self.action_sigma
+		elif vtype == 'reward':
+			mu = self.reward_mu
+			sigma = self.reward_sigma
+
+		return vec*sigma + mu

@@ -8,7 +8,7 @@ from envs.SpiralPath import SpiralPath
 
 if __name__ == '__main__':
 	# training parameters
-	max_episodes = 10
+	max_episodes = 20
 
 	# create environment
 	env = SpiralPath()
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 			print(', \tloss={}'.format(loss))
 
 	# plot results
-	eps = [0,3,6,9]
+	eps = [0,6,12,19]
 
 	for i_ep in eps:
 		fig = plt.figure()
