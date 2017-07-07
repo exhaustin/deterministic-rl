@@ -1,70 +1,174 @@
 import numpy as np
+from itertools import product
+import math
 import random
-from collections import deque
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.optimizers import Adam
+import tensorflow as tf
+from keras import backend as K
 
-# Our hero
-class DQNLearner:
-	def __init__(self, state_size, action_size, params=[0.95, 1, 0.1, 0.995, 0.001, 24]):
-		# learning parameters
-		self.gamma = params[0] #discount rate
-		self.epsilon = params[1] #exploration rate
-		self.epsilon_min = params[2]
-		self.epsilon_decay = params[3]
-		self.learning_rate = params[4]
-		self.h_width = params[5]
+from .networks.QValue_target_v0 import QValueNetwork
+from .misc.ReplayBuffer import ReplayBuffer
 
-		# input & output dimensions
-		self.state_size = state_size
-		self.action_size = action_size
+class DQN_Agent:
+	def __init__(self, state_dim, action_dim,
+		BATCH_SIZE=50,
+		TAU=0.1,	#target network hyperparameter
+		LRA=0.0001,	#learning rate for actor
+		LRC=0.001,	#learning rate for critic
+		GAMMA=0.99,
+		HIDDEN1=300,
+		HIDDEN2=600,
+		EXPLORE=2000,
+		BUFFER_SIZE=2000,
+		ACTION_SIZE=1000,
+		verbose=True,
+		prioritized=False
+		):
 
-		# initialize memory
-		self.memory = deque(maxlen=2000)
+		self.BATCH_SIZE=BATCH_SIZE
+		self.GAMMA = GAMMA
+		self.EXPLORE = EXPLORE
+		self.BUFFER_SIZE = BUFFER_SIZE
+		self.prioritized = prioritized
 
-		# initialize model
-		self.model = self._build_model()
-		#self.target_model = self._build_model()
-		#self.update_target_model()
+		# Ornstein-Uhlenbeck Process
+		self.mu_OU = 0
+		self.theta_OU = 0.1
+		self.sigma_OU = 0.2
 
-	def _build_model(self):
-		# NN for DQL
-		model = Sequential()
-		model.add(Dense(self.h_width, input_dim=self.state_size, activation='relu'))
-		model.add(Dense(self.h_width, activation='relu'))
-		model.add(Dense(self.action_size, activation='linear'))
-		model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
+		# Initialize variables
+		self.epsilon = 1
+		self.steps = 0
 
-		return model
+		# Tensorflow GPU optimization
+		config = tf.ConfigProto()
+		config.gpu_options.allow_growth = True
+		sess = tf.Session(config=config)
+		K.set_session(sess)
 
-	def remember(self, state, action, reward, next_state, done):
-		self.memory.append((state, action, reward, next_state, done))
+		# Initialize actor and critic
+		if verbose: print('Creating q-value network...')
+		self.qnet = QValueNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRA, HIDDEN1, HIDDEN2)
 
-	def act(self, state):
-		if np.random.rand() <= self.epsilon:
-			return random.randrange(self.action_size) # returns random troll action
-		act_values = self.model.predict(state)
-		return np.argmax(act_values[0]) #returns best action
+		# Discretized action space TODO: list action space
+		temp = product([np.linspace(-1,1,num=ACTION_SIZE) for a in range(action_dim)])
+		self.action_space = [
 
-	def replay(self, batch_size):
-		minibatch = random.sameple(self.memory, batch_size)
-		for state, action, reward, next_state, done in minibatch:
-			target = reward
-			if not done:
-				target = reward + self.gamma*np.amax(self.model.predict(next_state)[0])
-			target_f = self.model.predict(state)
-			target_f[0][action] = target
-			self.modelfit(state, target_f, epochs=1, verbose=0)
+
+	# Choose action
+	def act(self, state_in, toggle_explore=True):
+		# env format -> agent format
+		state = self.normalize(state_in, 'state')
+		state = np.reshape(state, [1,-1])
+
+		# Diminishing exploration
+		if self.epsilon > 0:
+			self.epsilon -= 1/self.EXPLORE
+		else:
+			self.epsilon = 0
+
+		# Ornstein-Uhlenbeck Process
+		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1)
+
+		# Produce action
+		action_original = self.actor.target_model.predict(state)
+		action_noise = toggle_explore*self.epsilon*OU(action_original)
 		
-		if self.epsilon > self.epsilon_min:
-			self.epsilon *= self.epsilon_decay
+		# Record step
+		self.steps += 1
 
-	def load(self, name):
-		self.model.load_weights(name)
+		# Clip, reshape and output
+		action_out =  np.clip(action_original + action_noise, -1, 1)
+		return self.denormalize(action_out[0,:], 'action')
 
-	def save(self, name):
-		self.model.save_weights(name)
+	# Recieve reward and learn
+	def learn(self, state_in, action_in, reward_in, new_state_in, done, verbose=False):
+		# env format -> agent format
+		state = self.normalize(state_in, 'state')
+		action = self.normalize(action_in, 'action')
+		reward = self.normalize(reward_in, 'reward')
+		new_state = self.normalize(new_state_in, 'state')
 
+		state = np.reshape(state, [1,-1])
+		action = np.reshape(action, [1,-1])
+		new_state = np.reshape(new_state, [1,-1])
 
+		# Save experience in buffer
+		self.buff.add([(state, action, reward, new_state, done), None])
 
+		# Extract batch
+		batch, batchsize = self.buff.getBatch(self.BATCH_SIZE)
+		states = np.concatenate([e[0][0] for e in batch], axis=0)
+		actions = np.concatenate([e[0][1] for e in batch], axis=0)
+		rewards = np.asarray([e[0][2] for e in batch])
+		new_states = np.concatenate([e[0][3] for e in batch], axis=0)
+		dones = np.asarray([e[0][4] for e in batch])
+
+		# Train q-network
+		target_q_values = self.critic.target_model.predict([new_states, self.actor.target_model.predict(new_states)])	
+		y = np.empty([batchsize])
+		loss = 0
+		for k in range(len(batch)):
+			if dones[k]:
+				y[k] = rewards[k]
+			else:
+				y[k] = rewards[k] + self.GAMMA*target_q_values[k]	
+
+		loss = self.critic.model.train_on_batch([states, actions], y)
+
+		# Update loss in buffer for prioritized experience
+		if self.prioritized:
+			for e in batch:
+				e[1] = (1-self.GAMMA)*e[1] + self.GAMMA*loss
+
+		# Train actor
+		a_for_grad = self.actor.model.predict(states)
+		grads = self.critic.gradients(states, a_for_grad)
+		self.actor.train(states, grads)
+
+		# Update target networks
+		self.actor.target_train()
+		self.critic.target_train()
+
+		# Print training info
+		if verbose:
+			print('steps={}, loss={}'.format(self.steps, loss))
+
+		# Return loss
+		return loss
+
+	# Get information from the environment
+	def peek(self, env):
+		self.state_mu = env.observation_mu
+		self.action_mu = env.action_mu
+		self.reward_mu = env.reward_mu
+		self.state_sigma = env.observation_sigma
+		self.action_sigma = env.action_sigma
+		self.reward_sigma = env.reward_sigma
+
+	# Env language -> Agent language
+	def normalize(self, vec, vtype):
+		if vtype == 'state':
+			mu = self.state_mu
+			sigma = self.state_sigma
+		elif vtype == 'action':
+			mu = self.action_mu
+			sigma = self.action_sigma
+		elif vtype == 'reward':
+			mu = self.reward_mu
+			sigma = self.reward_sigma
+
+		return (vec - mu)/sigma
+
+	# Agent language -> Env language
+	def denormalize(self, vec, vtype):
+		if vtype == 'state':
+			mu = self.state_mu
+			sigma = self.state_sigma
+		elif vtype == 'action':
+			mu = self.action_mu
+			sigma = self.action_sigma
+		elif vtype == 'reward':
+			mu = self.reward_mu
+			sigma = self.reward_sigma
+
+		return vec*sigma + mu
