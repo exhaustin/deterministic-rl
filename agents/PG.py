@@ -8,7 +8,7 @@ from .networks.Policy_v0 import PolicyNetwork
 from .networks.Value_v0 import ValueNetwork
 from .misc.ReplayBuffer import ReplayBuffer
 
-class REINFORCE_Agent:
+class PG_Agent:
 	def __init__(self, state_dim, action_dim,
 		BATCH_SIZE=50,
 		TAU=0.1,	#target network hyperparameter
@@ -22,6 +22,7 @@ class REINFORCE_Agent:
 		):
 
 		self.BATCH_SIZE=BATCH_SIZE
+		self.LR = LR
 		self.GAMMA = GAMMA
 		self.EXPLORE = EXPLORE
 		self.BUFFER_SIZE = BUFFER_SIZE
@@ -50,7 +51,7 @@ class REINFORCE_Agent:
 		# Initialize actor and critic
 		if verbose: print('Creating policy network...')
 		self.policy = PolicyNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LR, HIDDEN1, HIDDEN2)
-		if verbose: print('Creating policy network...')
+		if verbose: print('Creating baseline network...')
 		self.baseline = ValueNetwork(sess, state_dim, BATCH_SIZE, TAU, LR*10, HIDDEN1, HIDDEN2)
 
 		self.buff = ReplayBuffer(BUFFER_SIZE)
@@ -99,70 +100,41 @@ class REINFORCE_Agent:
 
 		# Perform policy update after an episode is complete
 		if done:
-			states = np.concatenate([e[0][0] for e in buff.buffer], axis=0)
-			actions = np.concatenate([e[0][1] for e in buff.buffer], axis=0)
-			rewards = np.asarray([e[0][2] for e in buff.buffer])
-			new_states = np.concatenate([e[0][3] for e in buff.buffer], axis=0)
+			states = [e[0] for e in self.buff.buffer]
+			actions = [e[1] for e in self.buff.buffer]
+			rewards = [e[2] for e in self.buff.buffer]
+			new_states = [e[3] for e in self.buff.buffer]
 
 			# REINFORCE: REward Increment = Nonnegative Factor x Offset Reinforcement x Characteristic Eligibility
-			q = 0
-			discounted_r = np.empty([1, self.steps])
-			for t in reversed(range(len(batch))):
-				q = self.rewards[t] + self.discount_factor*q
-				discounted_r[t] = q
-				baseline = self.baseline.model.predict(states[t])
+			r = 0
+			discounted_r = np.empty(self.steps)
+			for t in reversed(range(self.steps)):
+				r = rewards[t] + self.GAMMA*r
+				discounted_r[t] = r
+				b = self.baseline.model.predict(states[t])
 
-				grads = LR*(discounted_r - baseline)
+				action_grads = self.LR * (r - b) * actions[t]/np.linalg.norm(actions[t])
+				value_targets = (1-self.LR) * b + self.LR * r
 
 				# Update policy
-				self.policy.train(states, grads)
+				self.policy.train(states[t], action_grads)
 
-
-			# Update baseline
-			self.baseline.train(states, discounted_r)
+				# Update baseline using temporal difference learning TODO: Normalize values
+				self.baseline.model.train_on_batch(states[t], np.array(value_targets))
 
 			# Update statistics
 			self.eps += 1
-			self.ep_total_reward.append(rewards)
-			self.ep_total_steps.append(steps)
+			self.ep_total_rewards.append(self.rewards)
+			self.ep_total_steps.append(self.steps)
 
 			# Print training info
 			if verbose:
 				print('ep={}, \ttotal_steps={}, \tloss={}'.format(self.eps, ep_total_steps[self.eps], 0))
 
 			# Reset for new episode
-			steps = 0
-			rewards = 0
+			self.steps = 0
+			self.rewards = 0
 			self.buff.erase()
-
-
-
-		# Train critic
-		target_q_values = self.critic.target_model.predict([new_states, self.policy.target_model.predict(new_states)])	
-		y = np.empty([batchsize])
-		loss = 0
-		for k in range(len(batch)):
-			if dones[k]:
-				y[k] = rewards[k]
-			else:
-				y[k] = rewards[k] + self.GAMMA*target_q_values[k]	
-
-		loss = self.critic.model.train_on_batch([states, actions], y)
-
-		# Update loss in buffer for prioritized experience
-		if self.prioritized:
-			for e in batch:
-				e[1] = (1-self.GAMMA)*e[1] + self.GAMMA*loss
-
-		# Train actor
-		a_for_grad = self.actor.model.predict(states)
-		grads = self.critic.gradients(states, a_for_grad)
-		self.actor.train(states, grads)
-
-
-
-		# Return loss
-		return loss
 
 	# Get information from the environment
 	def peek(self, env):

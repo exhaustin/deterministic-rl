@@ -36,19 +36,19 @@ class PolicyNetwork:
 		self.optimize = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(grads)
 		self.sess.run(tf.global_variables_initializer())
 
-	def train(self, states, update_grads):
+	def train(self, states, action_grads):
 		self.sess.run(self.optimize,
 			feed_dict={
 				self.state: states,
-				self.action_gradient: update_grads
+				self.action_gradient:action_grads 
 			}
 		)
 
 	def create_policy_network(self, state_dim, action_dim):
 		#print("Building policy model...")
 		S = Input(shape=[state_dim])
-		h0 = Dense(self.HIDDEN1_UNITS, activation='elu', initializer=TruncatedNormal(0.0, 1e-4))(S)
-		h1 = Dense(self.HIDDEN2_UNITS, activation='elu', initializer=TruncatedNormal(0.0, 1e-4))(h0)
+		h0 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=TruncatedNormal(0.0, 1e-4))(S)
+		h1 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=TruncatedNormal(0.0, 1e-4))(h0)
 		V = Dense(action_dim, activation='tanh')(h1)
 		model = Model(inputs=S, outputs=V)
 

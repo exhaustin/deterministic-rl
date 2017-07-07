@@ -3,12 +3,12 @@ import sys
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from agents.REINFORCE import REINFORCE_Agent
+from agents.PG import PG_Agent
 from envs.SpiralPath import SpiralPath
 
 if __name__ == '__main__':
 	# training parameters
-	max_episodes = 10
+	max_episodes = 30
 
 	# create environment
 	env = SpiralPath()
@@ -17,11 +17,10 @@ if __name__ == '__main__':
 	action_dim = env.action_dim
 
 	# create agent
-	agent = REINFORCE_Agent(observation_dim, action_dim,
+	agent = PG_Agent(observation_dim, action_dim,
 		BATCH_SIZE = 25,
 		TAU = 0.1,
-		LRA = 0.0001,
-		LRC = 0.001,
+		LR = 0.0001,
 		GAMMA = 0.99,
 		HIDDEN1 = 150,
 		HIDDEN2 = 300
@@ -46,10 +45,11 @@ if __name__ == '__main__':
 			# simulate system for 1 timestep
 			observation = env.observe()
 			action = agent.act(observation)
+			#action = np.zeros(action_dim)
 			new_observation, reward, done = env.step(action)
 
 			# train agent
-			loss = agent.learn(observation, action, reward, new_observation, done)
+			agent.learn(observation, action, reward, new_observation, done)
 
 			# record data
 			state_cm = env.render()
@@ -58,11 +58,10 @@ if __name__ == '__main__':
 			# display
 			print('ep={0:2d}, \tt={1:.3f}, \t'.format(i_ep+1, env.getTime()), end='')
 			dist = (state_cm[0]**2 + state_cm[1]**2)**0.5
-			print('pos=({0:5.2f},{1:5.2f}), \tdist={2:4.2f}'.format(state_cm[0], state_cm[1], dist), end='')
-			print(', \tloss={}'.format(loss))
+			print('pos=({0:5.2f},{1:5.2f}), \tdist={2:4.2f}'.format(state_cm[0], state_cm[1], dist))
 
 	# plot results
-	eps = [0,3,6,9]
+	eps = [0,9,19,29]
 
 	for i_ep in eps:
 		fig = plt.figure()

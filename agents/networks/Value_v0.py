@@ -19,22 +19,22 @@ class ValueNetwork:
 		self.BATCH_SIZE = BATCH_SIZE
 		self.TAU = TAU
 		self.LEARNING_RATE = LEARNING_RATE
-		self.action_dim = action_dim
 		self.HIDDEN1_UNITS=HIDDEN1_UNITS
 		self.HIDDEN2_UNITS=HIDDEN2_UNITS
 
 		K.set_session(sess)
 
 		# create the model
-		self.model, self.state = self.create_critic_network(state_dim, action_dim)
+		self.model, self.state = self.create_value_network(state_dim)
 		self.sess.run(tf.global_variables_initializer())
 
-	def create_value_network(self, state_dim, action_dim):
+	def create_value_network(self, state_dim):
 		#print('Building critic model...')
 		S = Input(shape=[state_dim])
-		h1 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-2))(S)
-		h2 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-2))(h1)
-		V = Dense(1, activation='linear')(h2) 
+		h1 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-4))(S)
+		h2 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-4444))(h1)
+		h3 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-4444))(h2)
+		V = Dense(1, activation='linear')(h3) 
 
 		model = Model(inputs=S, outputs=V)
 		adam = Adam(lr=self.LEARNING_RATE)
