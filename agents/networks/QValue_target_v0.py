@@ -26,20 +26,20 @@ class QValueNetwork:
 		K.set_session(sess)
 
 		# create the model
-		self.model, self.action, self.state = self.create_critic_network(state_dim, action_dim)
-		self.target_model, self.target_action, self.target_state = self.create_critic_network(state_dim, action_dim)
+		self.model, self.action, self.state = self.create_value_network(state_dim, action_dim)
+		self.target_model, self.target_action, self.target_state = self.create_value_network(state_dim, action_dim)
 
 		self.sess.run(tf.global_variables_initializer())
 
 	def target_train(self):
-		critic_weights = self.model.get_weights()
-		critic_target_weights = self.target_model.get_weights()
-		for i in range(len(critic_weights)):
-			critic_target_weights[i] = self.TAU*critic_weights[i] + (1-self.TAU)*critic_target_weights[i]
-		self.target_model.set_weights(critic_target_weights)
+		value_weights = self.model.get_weights()
+		value_target_weights = self.target_model.get_weights()
+		for i in range(len(value_weights)):
+			value_target_weights[i] = self.TAU*value_weights[i] + (1-self.TAU)*value_target_weights[i]
+		self.target_model.set_weights(value_target_weights)
 
 	def create_value_network(self, state_dim, action_dim):
-		#print('Building critic model...')
+		#print('Building value model...')
 		S = Input(shape=[state_dim])
 		w1 = Dense(self.HIDDEN1_UNITS, activation='linear', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-2))(S)
 

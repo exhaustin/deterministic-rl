@@ -12,14 +12,13 @@ class DQN_Agent:
 	def __init__(self, state_dim, action_dim,
 		BATCH_SIZE=50,
 		TAU=0.1,	#target network hyperparameter
-		LRA=0.0001,	#learning rate for actor
-		LRC=0.001,	#learning rate for critic
+		LR=0.0003,	#learning rate for critic
 		GAMMA=0.99,
 		HIDDEN1=300,
 		HIDDEN2=600,
 		EXPLORE=2000,
 		BUFFER_SIZE=2000,
-		ACTION_SIZE=1000,
+		ACTION_SIZE=100,
 		verbose=True,
 		prioritized=False
 		):
@@ -29,11 +28,6 @@ class DQN_Agent:
 		self.EXPLORE = EXPLORE
 		self.BUFFER_SIZE = BUFFER_SIZE
 		self.prioritized = prioritized
-
-		# Ornstein-Uhlenbeck Process
-		self.mu_OU = 0
-		self.theta_OU = 0.1
-		self.sigma_OU = 0.2
 
 		# Initialize variables
 		self.epsilon = 1
@@ -47,11 +41,14 @@ class DQN_Agent:
 
 		# Initialize actor and critic
 		if verbose: print('Creating q-value network...')
-		self.qnet = QValueNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRA, HIDDEN1, HIDDEN2)
+		self.qnet = QValueNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LR, HIDDEN1, HIDDEN2)
 
-		# Discretized action space TODO: list action space
-		temp = product([np.linspace(-1,1,num=ACTION_SIZE) for a in range(action_dim)])
-		self.action_space = [
+		self.buff = ReplayBuffer(BUFFER_SIZE)
+
+		# Discretized action space
+		sp = product(*[np.linspace(-1,1,num=ACTION_SIZE) for a in range(action_dim)])
+		self.action_space = np.asarray([np.asarray(c) for c in sp])
+		self.n_actions = self.action_space.shape[0]
 
 
 	# Choose action
@@ -65,20 +62,21 @@ class DQN_Agent:
 			self.epsilon -= 1/self.EXPLORE
 		else:
 			self.epsilon = 0
-
-		# Ornstein-Uhlenbeck Process
-		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1)
-
-		# Produce action
-		action_original = self.actor.target_model.predict(state)
-		action_noise = toggle_explore*self.epsilon*OU(action_original)
 		
+		if random.random() > self.epsilon:
+			# Exploit
+			q_values = self.qnet.target_model.predict([np.tile(state, [self.n_actions,1]), self.action_space])
+			opt_idx = np.argmax(q_values)
+			action = self.action_space[opt_idx,:]
+		else:
+			# Explore
+			action = random.choice(self.action_space)
+
 		# Record step
 		self.steps += 1
 
 		# Clip, reshape and output
-		action_out =  np.clip(action_original + action_noise, -1, 1)
-		return self.denormalize(action_out[0,:], 'action')
+		return self.denormalize(action, 'action')
 
 	# Recieve reward and learn
 	def learn(self, state_in, action_in, reward_in, new_state_in, done, verbose=False):
@@ -104,7 +102,8 @@ class DQN_Agent:
 		dones = np.asarray([e[0][4] for e in batch])
 
 		# Train q-network
-		target_q_values = self.critic.target_model.predict([new_states, self.actor.target_model.predict(new_states)])	
+		random_action = random.choice(self.action_space)
+		target_q_values = self.qnet.target_model.predict([new_states, np.tile(random_action, [self.BATCH_SIZE ,1])])
 		y = np.empty([batchsize])
 		loss = 0
 		for k in range(len(batch)):
@@ -113,21 +112,15 @@ class DQN_Agent:
 			else:
 				y[k] = rewards[k] + self.GAMMA*target_q_values[k]	
 
-		loss = self.critic.model.train_on_batch([states, actions], y)
+		loss = self.qnet.model.train_on_batch([states, actions], y)
 
 		# Update loss in buffer for prioritized experience
 		if self.prioritized:
 			for e in batch:
 				e[1] = (1-self.GAMMA)*e[1] + self.GAMMA*loss
 
-		# Train actor
-		a_for_grad = self.actor.model.predict(states)
-		grads = self.critic.gradients(states, a_for_grad)
-		self.actor.train(states, grads)
-
 		# Update target networks
-		self.actor.target_train()
-		self.critic.target_train()
+		self.qnet.target_train()
 
 		# Print training info
 		if verbose:
