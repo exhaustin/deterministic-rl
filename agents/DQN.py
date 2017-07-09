@@ -18,7 +18,7 @@ class DQN_Agent:
 		HIDDEN2=600,
 		EXPLORE=2000,
 		BUFFER_SIZE=2000,
-		ACTION_SIZE=100,
+		ACTION_SIZE=10,
 		verbose=True,
 		prioritized=False
 		):
