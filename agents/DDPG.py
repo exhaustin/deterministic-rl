@@ -18,7 +18,7 @@ class DDPG_Agent:
 		HIDDEN1=300,
 		HIDDEN2=600,
 		EXPLORE=2000,
-		BUFFER_SIZE=2000,
+		BUFFER_SIZE=20000,
 		verbose=True,
 		prioritized=False
 		):
@@ -123,7 +123,7 @@ class DDPG_Agent:
 				e[1] = (1-self.GAMMA)*e[1] + self.GAMMA*loss
 
 		# Train actor
-		a_for_grad = self.actor.model.predict(states)
+		a_for_grad = np.clip(self.actor.model.predict(states), -0.01, 0.01)
 		grads = self.critic.gradients(states, a_for_grad)
 		self.actor.train(states, grads)
 
