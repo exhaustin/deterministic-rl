@@ -113,11 +113,12 @@ class PG_Agent:
 				discounted_r[t] = r
 				b = self.baseline.model.predict(states[t])
 
-				action_grads = self.LR * (r - b) * actions[t]/np.linalg.norm(actions[t])
-				value_targets = (1-self.LR) * b + self.LR * r
+				action_grads = self.LR * (r - b) * actions[t]#/np.linalg.norm(actions[t])
+				#value_targets = (1-self.LR) * b + self.LR * r
+				value_targets = r
 
 				# Update policy
-				self.policy.train(states[t], action_grads)
+				self.policy.train(states[t], np.clip(action_grads, -0.01, 0.01))
 
 				# Update baseline using temporal difference learning TODO: Normalize values
 				self.baseline.model.train_on_batch(states[t], np.array(value_targets))

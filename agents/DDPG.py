@@ -18,7 +18,7 @@ class DDPG_Agent:
 		HIDDEN1=300,
 		HIDDEN2=600,
 		EXPLORE=2000,
-		BUFFER_SIZE=20000,
+		BUFFER_SIZE=5000,
 		verbose=True,
 		prioritized=False
 		):
@@ -96,6 +96,10 @@ class DDPG_Agent:
 
 		# Save experience in buffer
 		self.buff.add([(state, action, reward, new_state, done), None])
+
+		# Do not train if not enough experience
+		if self.buff.count() < self.BUFFER_SIZE/2:
+			return 0
 
 		# Extract batch
 		batch, batchsize = self.buff.getBatch(self.BATCH_SIZE)
