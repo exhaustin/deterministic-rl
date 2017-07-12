@@ -4,7 +4,9 @@ import random
 import tensorflow as tf
 from keras import backend as K
 
-from .networks.ActorCritic_target_v0 import ActorNetwork, CriticNetwork
+#from .networks.ActorCritic_target_v0 import ActorNetwork, CriticNetwork
+from .networks.PolicyNet_v0 import PolicyNetwork
+from .networks.QValueNet_v0 import QValueNetwork
 from .misc.ReplayBuffer import ReplayBuffer
 from .misc.PrioritizedReplayBuffer import PrioritizedReplayBuffer
 
@@ -17,7 +19,7 @@ class DDPG_Agent:
 		GAMMA=0.99,
 		HIDDEN1=300,
 		HIDDEN2=600,
-		EXPLORE=2000,
+		EXPLORE=4000,
 		BUFFER_SIZE=5000,
 		verbose=True,
 		prioritized=False
@@ -46,10 +48,10 @@ class DDPG_Agent:
 
 		# Initialize actor and critic
 		if verbose: print('Creating actor network...')
-		self.actor = ActorNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRA, HIDDEN1, HIDDEN2)
+		self.actor = PolicyNetwork(sess, state_dim, action_dim, LRA, TAU, HIDDEN1, HIDDEN2)
 
 		if verbose: print('Creating critic network...')
-		self.critic = CriticNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LRC, HIDDEN1, HIDDEN2)
+		self.critic = QValueNetwork(sess, state_dim, action_dim, LRC, TAU, HIDDEN1, HIDDEN2)
 
 		if self.prioritized:
 			self.buff = PrioritizedReplayBuffer(self.BUFFER_SIZE)
@@ -72,7 +74,7 @@ class DDPG_Agent:
 		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1)
 
 		# Produce action
-		action_original = self.actor.target_model.predict(state)
+		action_original = self.actor.predict(state)
 		action_noise = toggle_explore*self.epsilon*OU(action_original)
 		
 		# Record step
@@ -110,7 +112,7 @@ class DDPG_Agent:
 		dones = np.asarray([e[0][4] for e in batch])
 
 		# Train critic
-		target_q_values = self.critic.target_model.predict([new_states, self.actor.target_model.predict(new_states)])	
+		target_q_values = self.critic.predict([new_states, self.actor.predict(new_states)])	
 		y = np.empty([batchsize])
 		loss = 0
 		for k in range(len(batch)):
@@ -119,7 +121,7 @@ class DDPG_Agent:
 			else:
 				y[k] = rewards[k] + self.GAMMA*target_q_values[k]	
 
-		loss = self.critic.model.train_on_batch([states, actions], y)
+		loss = self.critic.train_on_batch([states, actions], y)
 
 		# Update loss in buffer for prioritized experience
 		if self.prioritized:
@@ -127,9 +129,9 @@ class DDPG_Agent:
 				e[1] = (1-self.GAMMA)*e[1] + self.GAMMA*loss
 
 		# Train actor
-		a_for_grad = np.clip(self.actor.model.predict(states), -0.01, 0.01)
-		grads = self.critic.gradients(states, a_for_grad)
-		self.actor.train(states, grads)
+		a_for_grad = np.clip(self.actor.predict(states), -0.01, 0.01)
+		grads = self.critic.action_gradients(states, a_for_grad)
+		self.actor.train_on_grads(states, grads)
 
 		# Update target networks
 		self.actor.target_train()
