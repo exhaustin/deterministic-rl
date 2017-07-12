@@ -3,7 +3,7 @@ import sys
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from agents.DDPG import DDPG_Agent
+from agents.DDPG_greedy import DDPG_Agent
 from envs.SpiralPath import SpiralPath
 
 if __name__ == '__main__':

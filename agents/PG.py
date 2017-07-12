@@ -69,7 +69,7 @@ class PG_Agent:
 			self.epsilon = 0
 
 		# Ornstein-Uhlenbeck Process
-		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1)
+		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(len(x))
 
 		# Produce action
 		action_original = self.policy.predict(state)

@@ -17,8 +17,8 @@ class DDPG_Agent:
 		LRA=0.0001,	#learning rate for actor
 		LRC=0.001,	#learning rate for critic
 		GAMMA=0.99,
-		HIDDEN1=300,
-		HIDDEN2=600,
+		HIDDEN1=150,
+		HIDDEN2=300,
 		EXPLORE=4000,
 		BUFFER_SIZE=5000,
 		verbose=True,
@@ -71,7 +71,7 @@ class DDPG_Agent:
 			self.epsilon = 0
 
 		# Ornstein-Uhlenbeck Process
-		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1)
+		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(len(x))
 
 		# Produce action
 		action_original = self.actor.predict(state)
@@ -98,10 +98,6 @@ class DDPG_Agent:
 
 		# Save experience in buffer
 		self.buff.add([(state, action, reward, new_state, done), None])
-
-		# Do not train if not enough experience
-		if self.buff.count() < self.BUFFER_SIZE/2:
-			return 0
 
 		# Extract batch
 		batch, batchsize = self.buff.getBatch(self.BATCH_SIZE)

@@ -3,12 +3,12 @@ import sys
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from agents.PG import PG_Agent
+from agents.PG_greedy import PG_Agent
 from envs.SpiralPath import SpiralPath
 
 if __name__ == '__main__':
 	# training parameters
-	max_episodes = 30
+	max_episodes = 15
 
 	# create environment
 	env = SpiralPath()
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 			print('pos=({0:5.2f},{1:5.2f}), \tdist={2:4.2f}'.format(state_cm[0], state_cm[1], dist))
 
 	# plot results
-	eps = [0,9,19,29]
+	eps = [0,4,9,14]
 
 	for i_ep in eps:
 		fig = plt.figure()
