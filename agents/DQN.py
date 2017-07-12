@@ -5,7 +5,7 @@ import random
 import tensorflow as tf
 from keras import backend as K
 
-from .networks.QValue_target_v0 import QValueNetwork
+from .networks.QValueNet_v0 import QValueNetwork
 from .misc.ReplayBuffer import ReplayBuffer
 
 class DQN_Agent:
@@ -41,7 +41,7 @@ class DQN_Agent:
 
 		# Initialize actor and critic
 		if verbose: print('Creating q-value network...')
-		self.qnet = QValueNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LR, HIDDEN1, HIDDEN2)
+		self.qnet = QValueNetwork(sess, state_dim, action_dim, LR, TAU, HIDDEN1, HIDDEN2)
 
 		self.buff = ReplayBuffer(BUFFER_SIZE)
 
@@ -65,7 +65,7 @@ class DQN_Agent:
 		
 		if random.random() > self.epsilon:
 			# Exploit
-			q_values = self.qnet.target_model.predict([np.tile(state, [self.n_actions,1]), self.action_space])
+			q_values = self.qnet.predict([np.tile(state, [self.n_actions,1]), self.action_space])
 			opt_idx = np.argmax(q_values)
 			action = self.action_space[opt_idx,:]
 		else:
@@ -103,7 +103,7 @@ class DQN_Agent:
 
 		# Train q-network
 		random_action = random.choice(self.action_space)
-		target_q_values = self.qnet.target_model.predict([new_states, np.tile(random_action, [self.BATCH_SIZE ,1])])
+		target_q_values = self.qnet.predict([new_states, np.tile(random_action, [self.BATCH_SIZE ,1])])
 		y = np.empty([batchsize])
 		loss = 0
 		for k in range(len(batch)):
@@ -112,7 +112,7 @@ class DQN_Agent:
 			else:
 				y[k] = rewards[k] + self.GAMMA*target_q_values[k]	
 
-		loss = self.qnet.model.train_on_batch([states, actions], y)
+		loss = self.qnet.train_on_batch([states, actions], y)
 
 		# Update loss in buffer for prioritized experience
 		if self.prioritized:

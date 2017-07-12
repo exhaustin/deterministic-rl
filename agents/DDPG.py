@@ -129,9 +129,9 @@ class DDPG_Agent:
 				e[1] = (1-self.GAMMA)*e[1] + self.GAMMA*loss
 
 		# Train actor
-		a_for_grad = np.clip(self.actor.predict(states), -0.01, 0.01)
+		a_for_grad = self.actor.model.predict(states)
 		grads = self.critic.action_gradients(states, a_for_grad)
-		self.actor.train_on_grads(states, grads)
+		self.actor.train_on_grads(states, np.clip(grads, -0.01, 0.01))
 
 		# Update target networks
 		self.actor.target_train()

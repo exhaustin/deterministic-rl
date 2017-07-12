@@ -4,14 +4,14 @@ import random
 import tensorflow as tf
 from keras import backend as K
 
-from .networks.Policy_v0 import PolicyNetwork
-from .networks.Value_v0 import ValueNetwork
+from .networks.PolicyNet_v0 import PolicyNetwork
+from .networks.ValueNet_v0 import ValueNetwork
 from .misc.ReplayBuffer import ReplayBuffer
 
 class PG_Agent:
 	def __init__(self, state_dim, action_dim,
 		BATCH_SIZE=50,
-		TAU=0.1,	#target network hyperparameter
+		TAU=0,	#target network hyperparameter
 		LR=0.0001,	#learning rate
 		GAMMA=0.99,	#discount factor
 		HIDDEN1=300,
@@ -50,9 +50,9 @@ class PG_Agent:
 
 		# Initialize actor and critic
 		if verbose: print('Creating policy network...')
-		self.policy = PolicyNetwork(sess, state_dim, action_dim, BATCH_SIZE, TAU, LR, HIDDEN1, HIDDEN2)
+		self.policy = PolicyNetwork(sess, state_dim, action_dim, LR, TAU, HIDDEN1, HIDDEN2)
 		if verbose: print('Creating baseline network...')
-		self.baseline = ValueNetwork(sess, state_dim, BATCH_SIZE, TAU, LR*10, HIDDEN1, HIDDEN2)
+		self.baseline = ValueNetwork(sess, state_dim, LR*10, TAU, HIDDEN1, HIDDEN2)
 
 		self.buff = ReplayBuffer(BUFFER_SIZE)
 
@@ -72,7 +72,7 @@ class PG_Agent:
 		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1)
 
 		# Produce action
-		action_original = self.policy.model.predict(state)
+		action_original = self.policy.predict(state)
 		action_noise = toggle_explore*self.epsilon*OU(action_original)
 		
 		# Clip, reshape and output
@@ -118,10 +118,10 @@ class PG_Agent:
 				value_targets = r
 
 				# Update policy
-				self.policy.train(states[t], np.clip(action_grads, -0.01, 0.01))
+				self.policy.train_on_grads(states[t], np.clip(action_grads, -0.01, 0.01))
 
 				# Update baseline using temporal difference learning TODO: Normalize values
-				self.baseline.model.train_on_batch(states[t], np.array(value_targets))
+				self.baseline.train_on_batch(states[t], np.array(value_targets))
 
 			# Update statistics
 			self.eps += 1
