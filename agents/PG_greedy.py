@@ -4,8 +4,8 @@ import random
 import tensorflow as tf
 from keras import backend as K
 
-from .networks.PolicyNet_v0 import PolicyNetwork
-from .networks.ValueNet_v0 import ValueNetwork
+from .models.PolicyNet_v0 import PolicyNetwork
+from .models.ValueNet_v0 import ValueNetwork
 from .misc.ReplayBuffer import ReplayBuffer
 
 class PG_Agent:

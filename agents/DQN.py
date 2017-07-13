@@ -5,7 +5,7 @@ import random
 import tensorflow as tf
 from keras import backend as K
 
-from .networks.QValueNet_v0 import QValueNetwork
+from .models.QValueNet_v0 import QValueNetwork
 from .misc.ReplayBuffer import ReplayBuffer
 
 class DQN_Agent:
