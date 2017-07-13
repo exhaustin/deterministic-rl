@@ -51,6 +51,7 @@ class QValueNetwork:
 		# tools
 		K_INIT = initializers.TruncatedNormal(mean=0.0, stddev=1e-3)
 		K_REG = regularizers.l2(1e-3)
+		K_REG = None
 
 		# for dropout
 		#K.set_learning_phase(1)

@@ -39,6 +39,8 @@ class DDPG_Agent:
 		# Initialize variables
 		self.epsilon = 1
 		self.steps = 0
+		self.action_buff_size = 3
+		self.action_buff = []
 
 		# Tensorflow GPU optimization
 		config = tf.ConfigProto()
@@ -60,6 +62,9 @@ class DDPG_Agent:
 
 	# Choose action
 	def act(self, state_in, toggle_explore=True):
+		# Record step
+		self.steps += 1
+
 		# env format -> agent format
 		state = self.normalize(state_in, 'state')
 		state = np.reshape(state, [1,-1])
@@ -77,11 +82,18 @@ class DDPG_Agent:
 		action_original = self.actor.predict(state)
 		action_noise = toggle_explore*self.epsilon*OU(action_original)
 		
-		# Record step
-		self.steps += 1
+		# Clip
+		action = np.clip(action_original + action_noise, -1, 1)
 
-		# Clip, reshape and output
-		action_out =  np.clip(action_original + action_noise, -1, 1)
+		# Smooth using moving average
+		if len(self.action_buff) > self.action_buff_size:
+			self.action_buff.pop(0)
+			self.action_buff.append(action)
+			action_out = np.mean(np.concatenate(self.action_buff, axis=0), axis=0)
+		else:
+			action_out = action
+
+		# Reshape and output
 		return self.denormalize(action_out[0,:], 'action')
 
 	# Recieve reward and learn
@@ -136,6 +148,10 @@ class DDPG_Agent:
 		# Print training info
 		if verbose:
 			print('steps={}, loss={}'.format(self.steps, loss))
+
+		# Reset episodal stuff when done
+		if done:
+			action_buff = []
 
 		# Return loss
 		return loss
