@@ -1,6 +1,7 @@
 import numpy as np
 import math
-from keras.initializers import TruncatedNormal
+from keras import initializers
+from keras import regularizers
 from keras.models import Sequential, Model
 #from keras.engine.traning import collect_trainable_weights
 from keras import layers
@@ -47,16 +48,20 @@ class QValueNetwork:
 		self.sess.run(tf.global_variables_initializer())
 
 	def create_critic_network(self, state_dim, action_dim):
+		# tools
+		K_INIT = initializers.TruncatedNormal(mean=0.0, stddev=1e-3)
+		K_REG = regularizers.l2(1e-3)
+
 		#print('Building critic model...')
 		S = Input(shape=[state_dim])
-		w1 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-2))(S)
-		w2 = Dense(self.HIDDEN1_UNITS, activation='linear', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-2))(w1)
+		w1 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=K_INIT, kernel_regularizer=K_REG)(S)
+		w2 = Dense(self.HIDDEN1_UNITS, activation='linear', kernel_initializer=K_INIT, kernel_regularizer=K_REG)(w1)
 
 		A = Input(shape=[action_dim])
-		a1 = Dense(self.HIDDEN2_UNITS, activation='linear', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-2))(A)
+		a1 = Dense(self.HIDDEN2_UNITS, activation='linear', kernel_initializer=K_INIT, kernel_regularizer=K_REG)(A)
 
 		h1 = layers.concatenate([w2,a1])
-		h2 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=TruncatedNormal(mean=0.0, stddev=1e-2))(h1)
+		h2 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=K_INIT, kernel_regularizer=K_REG)(h1)
 		V = Dense(1, activation='linear')(h2) 
 		model = Model(inputs=[S,A], outputs=V)
 
