@@ -29,11 +29,11 @@ class PolicyNetwork:
 		K.set_session(self.sess)
 
 		# create the model
-		self.model, self.state = self.create_actor_network(state_dim, action_dim)
+		self.model, self.state = self.create_policy_network(state_dim, action_dim)
 		self.weights = self.model.trainable_weights
 
 		if TAU > 0:
-			self.target_model, self.target_state = self.create_actor_network(state_dim, action_dim)
+			self.target_model, self.target_state = self.create_policy_network(state_dim, action_dim)
 		
 		# gradient update path
 		self.action_gradient = tf.placeholder(tf.float32,[None, action_dim])
@@ -44,11 +44,11 @@ class PolicyNetwork:
 		# initialize model
 		self.sess.run(tf.global_variables_initializer())
 
-	def create_actor_network(self, state_dim, action_dim):
+	def create_policy_network(self, state_dim, action_dim):
 		# tools
 		K_INIT = initializers.TruncatedNormal(mean=0.0, stddev=1e-4)
 
-		#print("Building actor model...")
+		# build network model
 		S = Input(shape=[state_dim])
 		h0 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=K_INIT)(S)
 		h1 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=K_INIT)(h0)

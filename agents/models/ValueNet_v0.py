@@ -29,10 +29,10 @@ class ValueNetwork:
 		K.set_session(sess)
 
 		# create the model
-		self.model, self.state = self.create_critic_network(state_dim)
+		self.model, self.state = self.create_value_network(state_dim)
 		self.weights = self.model.trainable_weights
 		if TAU > 0:
-			self.target_model, self.target_state = self.create_critic_network(state_dim)
+			self.target_model, self.target_state = self.create_value_network(state_dim)
 
 		# gradient update path
 		self.v_gradient = tf.placeholder(tf.float32,[None, 1])
@@ -43,12 +43,12 @@ class ValueNetwork:
 		# initialize model
 		self.sess.run(tf.global_variables_initializer())
 
-	def create_critic_network(self, state_dim):
+	def create_value_network(self, state_dim):
 		# tools
 		K_INIT = initializers.TruncatedNormal(mean=0.0, stddev=1e-3)
 		K_REG = regularizers.l2(1e-3)
 
-		#print('Building critic model...')
+		# build network model
 		S = Input(shape=[state_dim])
 		w1 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=K_INIT, kernel_regularizer=K_REG)(S)
 		w2 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=K_INIT, kernel_regularizer=K_REG)(w1)
