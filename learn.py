@@ -3,7 +3,7 @@ import sys
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from agents.DDPG import DDPG_Agent
+from agents.DDPG_SARSA import DDPG_Agent
 from envs.SpiralPath import SpiralPath
 
 if __name__ == '__main__':
@@ -18,8 +18,7 @@ if __name__ == '__main__':
 
 	# create agent
 	agent = DDPG_Agent(observation_dim, action_dim,
-		BATCH_SIZE = 25,
-		TAU = 0.1,
+		BATCH_SIZE = 50,
 		LRA = 0.0001,
 		LRC = 0.001,
 		GAMMA = 0.3,

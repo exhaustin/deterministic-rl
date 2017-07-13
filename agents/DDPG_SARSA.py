@@ -5,14 +5,15 @@ import tensorflow as tf
 from keras import backend as K
 
 from .networks.PolicyNet_v0 import PolicyNetwork
-from .networks.ValueNet_v0 import ValueNetwork
+from .networks.QValueNet_v0 import QValueNetwork
 from .misc.ReplayBuffer import ReplayBuffer
 
-class PG_Agent:
+class DDPG_Agent:
 	def __init__(self, state_dim, action_dim,
 		BATCH_SIZE=50,
-		TAU=0,	#target network hyperparameter
-		LR=0.0001,	#learning rate
+		TAU=0.5,	#target network hyperparameter
+		LRA=0.0001,	#learning rate
+		LRC=0.001,	#learning rate
 		GAMMA=0.99,	#discount factor
 		HIDDEN1=300,
 		HIDDEN2=600,
@@ -22,7 +23,9 @@ class PG_Agent:
 		):
 
 		self.BATCH_SIZE=BATCH_SIZE
-		self.LR = LR
+		self.TAU = TAU
+		self.LRA = LRA
+		self.LRC = LRC
 		self.GAMMA = GAMMA
 		self.EXPLORE = EXPLORE
 		self.BUFFER_SIZE = BUFFER_SIZE
@@ -50,9 +53,9 @@ class PG_Agent:
 
 		# Initialize actor and critic
 		if verbose: print('Creating policy network...')
-		self.policy = PolicyNetwork(sess, state_dim, action_dim, LR, TAU, HIDDEN1, HIDDEN2)
+		self.actor = PolicyNetwork(sess, state_dim, action_dim, LRA, TAU, HIDDEN1, HIDDEN2)
 		if verbose: print('Creating baseline network...')
-		self.baseline = ValueNetwork(sess, state_dim, LR*10, TAU, HIDDEN1, HIDDEN2)
+		self.critic = QValueNetwork(sess, state_dim, action_dim, LRC, TAU, HIDDEN1, HIDDEN2)
 
 		self.buff = ReplayBuffer(BUFFER_SIZE)
 
@@ -72,7 +75,7 @@ class PG_Agent:
 		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(len(x))
 
 		# Produce action
-		action_original = self.policy.predict(state)
+		action_original = self.actor.predict(state)
 		action_noise = toggle_explore*self.epsilon*OU(action_original)
 		
 		# Clip, reshape and output
@@ -92,36 +95,51 @@ class PG_Agent:
 		new_state = np.reshape(new_state, [1,-1])
 
 		# Save experience in buffer
-		self.buff.add((state, action, reward, new_state))
+		self.buff.add((state, action, reward, new_state, done))
 
 		# Update statistics
 		self.steps += 1
 		self.rewards += reward
 
 		# Perform policy update after an episode is complete
-		if done:
-			states = [e[0] for e in self.buff.buffer]
-			actions = [e[1] for e in self.buff.buffer]
-			rewards = [e[2] for e in self.buff.buffer]
-			new_states = [e[3] for e in self.buff.buffer]
+		loss = None
 
-			# REINFORCE: REward Increment = Nonnegative Factor x Offset Reinforcement x Characteristic Eligibility
+		if done:
+			states = np.concatenate([e[0] for e in self.buff.buffer], axis=0)
+			actions = np.concatenate([e[1] for e in self.buff.buffer], axis=0)
+			rewards = np.asarray([e[2] for e in self.buff.buffer])
+			new_states = np.concatenate([e[3] for e in self.buff.buffer], axis=0)
+			dones = np.asarray([e[4] for e in self.buff.buffer])
+
+			# Calculate on-policy Q-values
+			q_values = np.empty(self.steps)
+			target_q_values = self.critic.predict([states[1:], actions[1:]])
+			for t in range(self.steps):
+				if dones[t]:
+					q_values[t] = rewards[t]
+				else:
+					q_values[t] = rewards[t] + self.GAMMA*target_q_values[t]
+
+			""" #True on-policy discounted rewards
+			q_values = np.empty(self.steps)
 			r = 0
-			discounted_r = np.empty(self.steps)
 			for t in reversed(range(self.steps)):
 				r = rewards[t] + self.GAMMA*r
-				discounted_r[t] = r
-				b = self.baseline.model.predict(states[t])
+				q_values[t] = r
+			"""
 
-				action_grads = self.LR * (r - b) * actions[t]#/np.linalg.norm(actions[t])
-				#value_targets = (1-self.LR) * b + self.LR * r
-				value_targets = r
+			# Update critic
+			loss = self.critic.model.fit([states, actions], q_values, batch_size=self.BATCH_SIZE, epochs=int(self.BATCH_SIZE/2), verbose=False)
 
-				# Update policy
-				self.policy.train_on_grads(states[t], np.clip(action_grads, -0.01, 0.01))
+			# Train actor
+			a_for_grad = self.actor.model.predict(states)
+			grads = self.critic.action_gradients(states, a_for_grad)
+			self.actor.train_on_grads(states, np.clip(grads, -0.01, 0.01))
 
-				# Update baseline using temporal difference learning TODO: Normalize values
-				self.baseline.train_on_batch(states[t], np.array(value_targets))
+			# Update target networks
+			if self.TAU > 0:
+				self.actor.target_train()
+				self.critic.target_train()
 
 			# Update statistics
 			self.eps += 1
@@ -136,6 +154,8 @@ class PG_Agent:
 			self.steps = 0
 			self.rewards = 0
 			self.buff.erase()
+
+		return loss
 
 	# Get information from the environment
 	def peek(self, env):
