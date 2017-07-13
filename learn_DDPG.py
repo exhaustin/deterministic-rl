@@ -3,7 +3,7 @@ import sys
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from agents.DDPG_greedy import DDPG_Agent
+from agents.DDPG import DDPG_Agent
 from envs.SpiralPath import SpiralPath
 
 if __name__ == '__main__':
@@ -22,7 +22,7 @@ if __name__ == '__main__':
 		TAU = 0.1,
 		LRA = 0.0001,
 		LRC = 0.001,
-		GAMMA = 0.99,
+		GAMMA = 0.3,
 		HIDDEN1 = 150,
 		HIDDEN2 = 300,
 	)
