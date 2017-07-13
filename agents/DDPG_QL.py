@@ -4,9 +4,9 @@ import random
 import tensorflow as tf
 from keras import backend as K
 
-#from .networks.ActorCritic_target_v0 import ActorNetwork, CriticNetwork
 from .models.PolicyNet_v0 import PolicyNetwork
 from .models.QValueNet_v0 import QValueNetwork
+#from .models.QValueNet_dropout_v1 import QValueNetwork
 from .misc.ReplayBuffer import ReplayBuffer
 from .misc.PrioritizedReplayBuffer import PrioritizedReplayBuffer
 
@@ -76,7 +76,7 @@ class DDPG_Agent:
 			self.epsilon = 0
 
 		# Ornstein-Uhlenbeck Process
-		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(len(x))
+		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1)
 
 		# Produce action
 		action_original = self.actor.predict(state)
@@ -94,7 +94,7 @@ class DDPG_Agent:
 			action_out = action
 
 		# Reshape and output
-		return self.denormalize(action_out[0,:], 'action')
+		return self.denormalize(action[0,:], 'action')
 
 	# Recieve reward and learn
 	def learn(self, state_in, action_in, reward_in, new_state_in, done, verbose=False):
@@ -139,7 +139,7 @@ class DDPG_Agent:
 		# Train actor
 		a_for_grad = self.actor.model.predict(states)
 		grads = self.critic.action_gradients(states, a_for_grad)
-		self.actor.train_on_grads(states, np.clip(grads, -0.01, 0.01))
+		self.actor.train_on_grads(states, np.clip(grads, -1e-3, 1e-3))
 
 		# Update target networks
 		self.actor.target_train()

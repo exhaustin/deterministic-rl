@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from keras import initializers
+from keras.initializers import TruncatedNormal as tn
 from keras.models import Sequential, Model
 #from keras.engine.traning import collect_trainable_weights
 from keras import layers
@@ -45,14 +45,11 @@ class PolicyNetwork:
 		self.sess.run(tf.global_variables_initializer())
 
 	def create_policy_network(self, state_dim, action_dim):
-		# tools
-		K_INIT = initializers.TruncatedNormal(mean=0.0, stddev=1e-4)
-
 		# build network model
 		S = Input(shape=[state_dim])
-		h0 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=K_INIT)(S)
-		h1 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=K_INIT)(h0)
-		V = Dense(action_dim, activation='tanh', kernel_initializer=K_INIT)(h1)
+		h0 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=tn(mean=0.0, stddev=1e-4))(S)
+		h1 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=tn(mean=0.0, stddev=1e-4))(h0)
+		V = Dense(action_dim, activation='tanh', kernel_initializer=tn(mean=0.0, stddev=1e-4))(h1)
 		model = Model(inputs=S, outputs=V)
 
 		adam = Adam(lr=self.lr)

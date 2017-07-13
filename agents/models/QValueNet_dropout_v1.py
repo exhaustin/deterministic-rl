@@ -1,7 +1,6 @@
 import numpy as np
 import math
 from keras import initializers
-from keras import regularizers
 from keras.models import Sequential, Model
 #from keras.engine.traning import collect_trainable_weights
 from keras import layers
@@ -50,23 +49,22 @@ class QValueNetwork:
 	def create_qvalue_network(self, state_dim, action_dim):
 		# tools
 		K_INIT = initializers.TruncatedNormal(mean=0.0, stddev=1e-3)
-		K_REG = regularizers.l2(1e-3)
 
 		# for dropout
 		K.set_learning_phase(1)
 
 		# build network model
 		S = Input(shape=[state_dim])
-		w1 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=K_INIT, kernel_regularizer=K_REG)(S)
+		w1 = Dense(self.HIDDEN1_UNITS, activation='elu', kernel_initializer=K_INIT)(S)
 		w2_d = Dropout(rate=0.1)(w1)
-		w2 = Dense(self.HIDDEN1_UNITS, activation='linear', kernel_initializer=K_INIT, kernel_regularizer=K_REG)(w2_d)
+		w2 = Dense(self.HIDDEN1_UNITS, activation='linear', kernel_initializer=K_INIT)(w2_d)
 
 		A = Input(shape=[action_dim])
-		a1 = Dense(self.HIDDEN2_UNITS, activation='linear', kernel_initializer=K_INIT, kernel_regularizer=K_REG)(A)
+		a1 = Dense(self.HIDDEN2_UNITS, activation='linear', kernel_initializer=K_INIT)(A)
 
-		h1 = layers.concatenate([w2_d,a1_d])
+		h1 = layers.concatenate([w2,a1])
 		h2_d = Dropout(rate=0.1)(h1)
-		h2 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=K_INIT, kernel_regularizer=K_REG)(h2_d)
+		h2 = Dense(self.HIDDEN2_UNITS, activation='elu', kernel_initializer=K_INIT)(h2_d)
 		V = Dense(1, activation='linear')(h2) 
 		model = Model(inputs=[S,A], outputs=V)
 
@@ -76,6 +74,7 @@ class QValueNetwork:
 		return model, A, S
 
 	def action_gradients(self, states, actions):
+		K.set_learning_phase(0)
 		return self.sess.run(
 			self.action_grads,
 			feed_dict={
@@ -83,6 +82,7 @@ class QValueNetwork:
 				self.action: actions
 			}
 		)[0]
+		K.set_learning_phase(1)
 
 	def train_on_grads(self, inputs, q_grads):
 		self.sess.run(self.optimize,

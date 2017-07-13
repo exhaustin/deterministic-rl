@@ -21,7 +21,7 @@ if __name__ == '__main__':
 		BATCH_SIZE = 50,
 		LRA = 0.0001,
 		LRC = 0.001,
-		GAMMA = 0.1,
+		GAMMA = 0.3,
 		HIDDEN1 = 150,
 		HIDDEN2 = 300,
 	)
