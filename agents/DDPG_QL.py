@@ -71,7 +71,7 @@ class DDPG_Agent:
 
 		# Diminishing exploration
 		if self.epsilon > 0:
-			self.epsilon -= 1/self.EXPLORE
+			self.epsilon = np.exp(-self.steps/self.EXPLORE)
 		else:
 			self.epsilon = 0
 

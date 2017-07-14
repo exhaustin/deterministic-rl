@@ -3,8 +3,8 @@ import sys
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from agents.DDPG_SARSA import DDPG_Agent
-from envs.SpiralPath_fonly import SpiralPath
+from agents.DDPG_QL import DDPG_Agent
+from envs.SpiralPath import SpiralPath
 
 if __name__ == '__main__':
 	# training parameters
@@ -24,6 +24,7 @@ if __name__ == '__main__':
 		GAMMA = 0.3,
 		HIDDEN1 = 150,
 		HIDDEN2 = 300,
+		EXPLORE = 4000,
 	)
 
 	agent.peek(env)

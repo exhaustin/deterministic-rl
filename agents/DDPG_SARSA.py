@@ -19,7 +19,7 @@ class DDPG_Agent:
 		GAMMA=0.99,
 		HIDDEN1=150,
 		HIDDEN2=300,
-		EXPLORE=4000,
+		EXPLORE=2000,
 		BUFFER_SIZE=50,
 		verbose=True
 		):
@@ -66,7 +66,7 @@ class DDPG_Agent:
 
 		# Diminishing exploration
 		if self.epsilon > 0:
-			self.epsilon -= 1/self.EXPLORE
+			self.epsilon = np.exp(-self.steps/self.EXPLORE)
 		else:
 			self.epsilon = 0
 
