@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 from agents.DDPG_QL import DDPG_Agent
-from envs.SpiralPath import SpiralPath
+from envs.SpiralPath_fonly import SpiralPath
 
 if __name__ == '__main__':
 	# training parameters

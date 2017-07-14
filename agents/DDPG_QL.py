@@ -33,7 +33,7 @@ class DDPG_Agent:
 
 		# Ornstein-Uhlenbeck Process
 		self.mu_OU = 0
-		self.theta_OU = 0.1
+		self.theta_OU = 0.02
 		self.sigma_OU = 0.2
 
 		# Initialize variables
