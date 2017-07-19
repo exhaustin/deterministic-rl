@@ -64,8 +64,8 @@ if __name__ == '__main__':
 			print('ep={}, \tt={}, \t'.format(i_ep+1, env.getTime()), end='')
 			force = (F[0]**2 + F[1]**2 + F[2]**2)**0.5
 			torque = (F[3]**2 + F[4]**2 + F[5]**2)**0.5
-			print('force={0:5.2f}, \ttorque={1:4.2f}'.format(force, torque), end='')
-			print(', \tloss={}'.format(loss))
+			print('force={0:5.2f}, \ttorque={1:4.2f}, \t'.format(force, torque), end='')
+			print('cost={0:3.5f}, \tloss={1:3.10f}'.format(-reward,loss))
 
 	# plot results
 	eps = [0,6,12,19]
