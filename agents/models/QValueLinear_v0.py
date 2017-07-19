@@ -28,7 +28,7 @@ class QValueModel:
 
 	def train(self, inputs, q_targets):
 		delta = q_targets - self.predict(inputs)[0,0]
-		self.train_on_grads(inputs, np.clip(delta, -0.01, 0.01))
+		self.train_on_grads(inputs, np.clip(delta, -1e-3, 1e-3))
 
 		return abs(delta[0,0])
 

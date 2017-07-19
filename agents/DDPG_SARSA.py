@@ -85,6 +85,7 @@ class DDPG_Agent:
 			self.action_buff.append(action)
 			if len(self.action_buff) >= self.action_buff_size:
 				action = np.mean(np.concatenate(self.action_buff, axis=1), axis=1)
+				action = np.reshape(action, [1,-1])
 				self.action_buff.pop(0)
 
 		# Reshape and output

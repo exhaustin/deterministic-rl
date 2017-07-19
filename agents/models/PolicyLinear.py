@@ -25,7 +25,7 @@ class PolicyModel:
 		for i in range(self.action_dim):
 			for j in range(self.state_dim):
 				self.K[i,j] += self.lr * states[j,0] * action_grads[i,0]
-			self.b[i,0] +=	self.lr * action_grads[i,0] 
+			#self.b[i,0] +=	self.lr * action_grads[i,0] 
 
 	def predict(self, states):
 		return np.matmul(self.K, states) + self.b

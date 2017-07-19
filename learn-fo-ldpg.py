@@ -20,13 +20,13 @@ if __name__ == '__main__':
 	K_init = np.zeros([action_dim, state_dim])
 	for i in range(action_dim):
 		if i < action_dim/2:
-			K_init[i,i] = 1
+			K_init[i,i] = -1
 		else:
-			K_init[i,i] = 0.2
+			K_init[i,i] = -0.2
 
 	agent = LDPG_Agent(observation_dim, action_dim,
-		LRA = 1e-6,
-		LRC = 1e-5,
+		LRA = 1e-3,
+		LRC = 1e-2,
 		GAMMA = 0,
 		EXPLORE = 4000,
 		K_init = K_init,
