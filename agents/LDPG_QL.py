@@ -5,7 +5,7 @@ import random
 from .models.PolicyLinear import PolicyModel
 from .models.QValueLinear_v0 import QValueModel
 
-class DDPG_Agent:
+class LDPG_Agent:
 	def __init__(self, state_dim, action_dim,
 		LRA=0.0001,	#learning rate for actor
 		LRC=0.001,	#learning rate for critic
@@ -37,7 +37,7 @@ class DDPG_Agent:
 		self.critic = QValueModel(state_dim, action_dim, lr=LRC)
 
 	# Choose action
-	def act(self, state_in, toggle_explore=True):
+	def act(self, state_in, toggle_filter=False, toggle_explore=True):
 		# Record step
 		self.steps += 1
 
@@ -62,12 +62,11 @@ class DDPG_Agent:
 		action = np.clip(action_original + action_noise, -1, 1)
 
 		# Smooth using moving average
-		if len(self.action_buff) > self.action_buff_size:
-			self.action_buff.pop(0)
+		if toggle_filter:
 			self.action_buff.append(action)
-			action_out = np.mean(np.concatenate(self.action_buff, axis=1), axis=1)
-		else:
-			action_out = action
+			if len(self.action_buff) >= self.action_buff_size:
+				action = np.mean(np.concatenate(self.action_buff, axis=1), axis=1)
+				self.action_buff.pop(0)
 
 		# Reshape and output
 		return self.denormalize(action[:,0], 'action')
@@ -98,12 +97,12 @@ class DDPG_Agent:
 		"""
 
 		# Train critic
-		target_q_value = reward + self.GAMMA * self.critic.predict([new_state, self.actor.predict(new_state)])[0,0]
+		target_q_value = reward + self.GAMMA * self.critic.predict([new_state, self.actor.predict(new_state)])
 		loss = self.critic.train([state, action], target_q_value)
 
 		# Train actor
-		grads = self.critic.action_gradients(states, action)
-		self.actor.train_on_grads(states, np.clip(grads, -1e-3, 1e-3))
+		grads = self.critic.action_gradients(state, action)
+		self.actor.train_on_grads(state, np.clip(grads, -1e-3, 1e-3))
 
 		# Print training info
 		if verbose:

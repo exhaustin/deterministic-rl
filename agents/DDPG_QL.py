@@ -61,7 +61,7 @@ class DDPG_Agent:
 			self.buff = ReplayBuffer(self.BUFFER_SIZE)
 
 	# Choose action
-	def act(self, state_in, toggle_explore=True):
+	def act(self, state_in, toggle_filter=True, toggle_explore=True):
 		# Record step
 		self.steps += 1
 
@@ -86,12 +86,11 @@ class DDPG_Agent:
 		action = np.clip(action_original + action_noise, -1, 1)
 
 		# Smooth using moving average
-		if len(self.action_buff) > self.action_buff_size:
-			self.action_buff.pop(0)
+		if toggle_filter:
 			self.action_buff.append(action)
-			action_out = np.mean(np.concatenate(self.action_buff, axis=0), axis=0)
-		else:
-			action_out = action
+			if len(self.action_buff) >= self.action_buff_size:
+				action = np.mean(np.concatenate(self.action_buff, axis=1), axis=1)
+				self.action_buff.pop(0)
 
 		# Reshape and output
 		return self.denormalize(action[0,:], 'action')

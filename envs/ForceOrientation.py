@@ -20,15 +20,14 @@ class ForceOrientation:
 		self.observation_dim = 6 	#Fx, Fy, Fz, Mx, My, Mz
 
 		# states
-		self.init_state = np.array([self.sys.r, 0, 0, 0])
-		self.state = self.init_state
+		self.state = np.random.rand(self.state_dim)
 		self.time = 0
 
 		# normalization params
 		self.observation_mu = np.zeros(self.observation_dim)
 		self.observation_sigma = np.ones(self.observation_dim)
 		self.action_mu = np.zeros(self.action_dim)
-		self.action_sigma = 0.001*np.ones(self.action_dim)
+		self.action_sigma = 0.01*np.ones(self.action_dim)
 		self.reward_mu = [0]
 		self.reward_sigma = [1]
 
@@ -58,7 +57,7 @@ class ForceOrientation:
 
 	# Reward definition
 	def reward_func(self, state, action, new_state, done):
-		return np.linalg.norm(state)
+		return -( np.linalg.norm(state[0:3]) + 0.2*np.linalg.norm(state[3:6]) )
 
 	# Get observataions
 	def observe(self, state=None):
