@@ -22,9 +22,11 @@ class PolicyModel:
 		self.b = b_init
 
 	def train_on_grads(self, states, action_grads):
+		batchsize = states.shape[1]
+
 		for i in range(self.action_dim):
 			for j in range(self.state_dim):
-				self.K[i,j] += self.lr * states[j,0] * action_grads[i,0]
+				self.K[i,j] += self.lr * np.mean(np.multiply(states[j,:], action_grads[i,:]))
 			#self.b[i,0] +=	self.lr * action_grads[i,0] 
 
 	def predict(self, states):

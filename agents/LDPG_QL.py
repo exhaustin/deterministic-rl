@@ -4,23 +4,27 @@ import random
 
 from .models.PolicyLinear import PolicyModel
 from .models.QValueLinear_v0 import QValueModel
+from .misc.ReplayBuffer import ReplayBuffer
 
 class LDPG_Agent:
 	def __init__(self, state_dim, action_dim,
+		BATCH_SIZE=50,
 		LRA=0.0001,	#learning rate for actor
 		LRC=0.001,	#learning rate for critic
 		GAMMA=0.99,
 		EXPLORE=4000,
+		BUFFER_SIZE=5000,
 		K_init=None,
 		verbose=False,
 		):
 
+		self.BATCH_SIZE = BATCH_SIZE
 		self.GAMMA = GAMMA
 		self.EXPLORE = EXPLORE
 
 		# Ornstein-Uhlenbeck Process
 		self.mu_OU = 0
-		self.theta_OU = 0.01
+		self.theta_OU = 0.02
 		self.sigma_OU = 0.2
 
 		# Initialize variables
@@ -35,6 +39,9 @@ class LDPG_Agent:
 
 		if verbose: print('Creating critic network...')
 		self.critic = QValueModel(state_dim, action_dim, lr=LRC)
+
+		# Initialize buffer
+		self.buff = ReplayBuffer(BUFFER_SIZE)
 
 	# Choose action
 	def act(self, state_in, toggle_filter=False, toggle_explore=True):
@@ -84,26 +91,24 @@ class LDPG_Agent:
 		action = np.reshape(action, [-1,1])
 		new_state = np.reshape(new_state, [-1,1])
 
-		"""
 		# Save experience in buffer
-		self.buff.add([(state, action, reward, new_state, done), None])
+		self.buff.add((state, action, reward, new_state, done))
 
 		# Extract batch
 		batch, batchsize = self.buff.getBatch(self.BATCH_SIZE)
-		states = np.concatenate([e[0][0] for e in batch], axis=0)
-		actions = np.concatenate([e[0][1] for e in batch], axis=0)
-		rewards = np.asarray([e[0][2] for e in batch])
-		new_states = np.concatenate([e[0][3] for e in batch], axis=0)
-		dones = np.asarray([e[0][4] for e in batch])
-		"""
+		states = np.concatenate([e[0] for e in batch], axis=1)
+		actions = np.concatenate([e[1] for e in batch], axis=1)
+		rewards = np.asarray([e[2] for e in batch])
+		new_states = np.concatenate([e[3] for e in batch], axis=1)
+		dones = np.asarray([e[4] for e in batch])
 
 		# Train critic
-		target_q_value = reward + self.GAMMA * self.critic.predict([new_state, self.actor.predict(new_state)])
-		loss = self.critic.train([state, action], target_q_value)
+		target_q_values = rewards + self.GAMMA * self.critic.predict([new_states, self.actor.predict(new_states)])
+		loss = self.critic.train([states, actions], target_q_values)
 
 		# Train actor
-		grads = self.critic.action_gradients(state, action)
-		self.actor.train_on_grads(state, grads)
+		grads = self.critic.action_gradients(states, actions)
+		self.actor.train_on_grads(states, np.clip(grads, -1e-2, 1e-2))
 
 		# Print training info
 		if verbose:
