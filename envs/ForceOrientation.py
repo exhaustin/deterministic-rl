@@ -28,7 +28,7 @@ class ForceOrientation:
 		self.observation_mu = np.zeros(self.observation_dim)
 		self.observation_sigma = np.ones(self.observation_dim)
 		self.action_mu = np.zeros(self.action_dim)
-		self.action_sigma = np.ones(self.action_dim)
+		self.action_sigma = 0.001*np.ones(self.action_dim)
 		self.reward_mu = [0]
 		self.reward_sigma = [1]
 
