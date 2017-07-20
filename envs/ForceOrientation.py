@@ -90,7 +90,11 @@ class ForceOrientation:
 	def render(self, state=None):
 		if state is None:
 			state = self.state
-		return state
+
+		force = (state[0]**2 + state[1]**2 + state[2]**2)**0.5
+		torque = (state[3]**2 + state[4]**2 + state[5]**2)**0.5
+
+		return force, torque
 
 class ForceSystem:
 	def __init__(self, seed=None):

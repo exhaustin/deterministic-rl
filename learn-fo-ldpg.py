@@ -35,13 +35,14 @@ if __name__ == '__main__':
 	agent.peek(env)
 
 	# create log database
-	state_log = np.empty([max_episodes, observation_dim, 500+2])
+	state_log = np.empty([max_episodes, 2, 500+2])
 
 	# run system
 	for i_ep in range(max_episodes):
 		# "Haruki, reset."
 		env.reset()
-		state_log[i_ep, :, 0] = env.render()
+		force, torque = env.render()
+		state_log[i_ep, :, 0] = [force, torque]
 		done = False
 
 		# train
@@ -57,16 +58,21 @@ if __name__ == '__main__':
 			loss = agent.learn(observation, action, reward, new_observation, done)
 
 			# record data
-			F = env.render()
-			state_log[i_ep, :, T] = F
+			force, torque = env.render()
+			state_log[i_ep, :, T] = [force, torque]
 
 			# display
 			print('ep={}, \tt={}, \t'.format(i_ep+1, env.getTime()), end='')
-			force = (F[0]**2 + F[1]**2 + F[2]**2)**0.5
-			torque = (F[3]**2 + F[4]**2 + F[5]**2)**0.5
 			print('force={0:5.2f}, \ttorque={1:4.2f}, \t'.format(force, torque), end='')
 			print('cost={0:3.5f}, \tloss={1:3.10f}'.format(-reward,loss))
 
 	# plot results
 	eps = [0,6,12,19]
+	t = range(502)
+
+	for ep in eps:
+		plt.plot(t, state_log[ep,0,:], 'r', t, state_log[ep,1,:], 'b')
+		plt.axis([0, 500, 0, 2])
+		plt.show()
+
 

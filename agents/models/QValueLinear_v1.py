@@ -27,9 +27,12 @@ class QValueModel:
 		for i in range(self.state_dim):
 			for j in range(self.action_dim):
 				Mw_grads = np.multiply(states[i,:], actions[j,:])
-				Nw_grads = np.multiply(states[i,:], states[i,:])
 				self.M[i,j] += self.lr * np.mean(np.multiply(Mw_grads, q_grads))
-				self.N[i,j] += self.lr * np.mean(np.multiply(Nw_grads, q_grads))
+
+			for j2 in range(self.state_dim):
+				Nw_grads = np.multiply(states[i,:], states[j2,:])
+				self.N[i,j2] += self.lr * np.mean(np.multiply(Nw_grads, q_grads))
+
 		self.b += self.lr * np.mean(q_grads)
 
 	def train(self, inputs, q_targets):

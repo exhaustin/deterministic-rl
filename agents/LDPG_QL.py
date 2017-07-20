@@ -3,7 +3,7 @@ import math
 import random
 
 from .models.PolicyLinear import PolicyModel
-from .models.QValueLinear_v0 import QValueModel
+from .models.QValueLinear_v1 import QValueModel
 from .misc.ReplayBuffer import ReplayBuffer
 
 class LDPG_Agent:
