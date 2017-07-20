@@ -28,8 +28,8 @@ if __name__ == '__main__':
 
 	agent = LDPG_Agent(observation_dim, action_dim,
 		BATCH_SIZE = 20,
-		LRA = 1e-4,
-		LRC = 1e-3,
+		LRA = 1e-5,
+		LRC = 1e-4,
 		GAMMA = 0.3,
 		EXPLORE = 8000,
 		K_init = K_init,
@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
 	for ep in eps:
 		plt.plot(t, state_log[ep,0,:])
-		plt.axis([0, 500, 0, 2])
+		plt.axis([0, 500, 0, 4])
 		plt.show()
 
 

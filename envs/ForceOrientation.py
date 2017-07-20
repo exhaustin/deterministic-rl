@@ -58,8 +58,8 @@ class ForceOrientation:
 	# Reward definition
 	def reward_func(self, state, action, new_state, done):
 		f = self.sys.observe(new_state)
-		#return -(np.matmul(f.T, f))
-		return -np.linalg.norm(f)
+		return -(np.matmul(f.T, f))
+		#return -np.linalg.norm(f)
 
 	# Get observataions
 	def observe(self, state=None):
@@ -107,9 +107,7 @@ class ForceSystem:
 
 		# stiffness matrix
 		self.k = 1	#diagonal terms bias
-		self.K = np.random.rand(6,6)
-		for i in range(6):
-			self.K[i,i] += self.k
+		self.K = np.random.rand(6,6) + self.k*np.eye(6)
 			
 	# simulate system for one step
 	def step(self, state, action):

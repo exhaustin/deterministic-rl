@@ -26,8 +26,8 @@ class PolicyModel:
 
 		for i in range(self.action_dim):
 			for j in range(self.state_dim):
-				w_grads = states[j,:]
-				self.K[i,j] += self.lr * np.mean(np.multiply(w_grads, action_grads[i,:]))
+				k_grads = states[j,:]
+				self.K[i,j] += self.lr * np.mean(np.multiply(k_grads, action_grads[i,:]))
 			#self.b[i,0] +=	self.lr * action_grads[i,0] 
 
 	def predict(self, states):
