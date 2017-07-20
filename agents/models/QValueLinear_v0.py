@@ -23,9 +23,9 @@ class QValueModel:
 		actions = inputs[1]
 		#batchsize = states.shape[1]
 
-		for i in range(self.action_dim):
-			for j in range(self.state_dim):
-				w_grads = np.multiply(states[j,:], actions[i,:])
+		for i in range(self.state_dim):
+			for j in range(self.action_dim):
+				w_grads = np.multiply(states[i,:], actions[j,:])
 				self.M[i,j] += self.lr * np.mean(np.multiply(w_grads, q_grads))
 		self.b += self.lr * np.mean(q_grads)
 
@@ -38,5 +38,5 @@ class QValueModel:
 	def predict(self, inputs):
 		state = inputs[0]
 		action = inputs[1]
-		q = np.sum(np.multiply(np.matmul(self.M.T, state) ,action), axis=0) + self.b
-		return q
+		q = np.matmul(np.matmul(state.T, self.M) ,action), axis=0) + self.b
+		return q[0,0]

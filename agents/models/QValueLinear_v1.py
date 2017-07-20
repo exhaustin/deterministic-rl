@@ -12,6 +12,7 @@ class QValueModel:
 
 		# create the model
 		self.M = epsilon * np.random.rand(state_dim, action_dim)
+		self.N = epsilon * np.random.rand(state_dim, state_dim)
 		self.b = epsilon * np.random.rand(1,1)
 		#self.b = np.zeros([1,1])
 
@@ -23,12 +24,13 @@ class QValueModel:
 		actions = inputs[1]
 		#batchsize = states.shape[1]
 
-		for i in range(self.action_dim):
-			for j in range(self.state_dim):
-				grads = np.multiply(q_grads, np.multiply(states[j,:], actions[i,:]))
-				self.M[i,j] += self.lr * np.mean(grads)
+		for i in range(self.state_dim):
+			for j in range(self.action_dim):
+				Mw_grads = np.multiply(states[i,:], actions[j,:])
+				Nw_grads = np.multiply(states[i,:], states[i,:])
+				self.M[i,j] += self.lr * np.mean(np.multiply(Mw_grads, q_grads))
+				self.N[i,j] += self.lr * np.mean(np.multiply(Nw_grads, q_grads))
 		self.b += self.lr * np.mean(q_grads)
-		self.c += self.lr * np.mean(q_grads)
 
 	def train(self, inputs, q_targets):
 		delta = q_targets - self.predict(inputs)
@@ -39,4 +41,5 @@ class QValueModel:
 	def predict(self, inputs):
 		state = inputs[0]
 		action = inputs[1]
-		return np.tanh(np.matmul(np.matmul(state.T, self.M) ,action) + self.b) + self.c
+		q = np.matmul(np.matmul(state.T, self.M) ,action), axis=0) + np.matmul(np.matmul(state.T, self.N), state) + self.b
+		return q[0,0]
