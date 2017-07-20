@@ -11,21 +11,26 @@ if __name__ == '__main__':
 	max_episodes = 20
 
 	# create environment
-	env = ForceOrientation(seed=87878787)
+	env = ForceOrientation(seed=9487)
 	state_dim = env.state_dim
 	observation_dim = env.observation_dim
 	action_dim = env.action_dim
 
 	# create agent
 	K_init = np.zeros([action_dim, state_dim])
+	"""
 	for i in range(action_dim):
-		K_init[i,i] = 1
+		if i < action_dim/2:
+			K_init[i,i] = 0.2
+		else:
+			K_init[i,i] = 0.1
+	"""
 
 	agent = LDPG_Agent(observation_dim, action_dim,
 		BATCH_SIZE = 20,
-		LRA = 1e-3,
-		LRC = 1e-2,
-		GAMMA = 0.1,
+		LRA = 1e-4,
+		LRC = 1e-3,
+		GAMMA = 0.3,
 		EXPLORE = 8000,
 		K_init = K_init,
 	)

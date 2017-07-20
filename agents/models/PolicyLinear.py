@@ -15,11 +15,11 @@ class PolicyModel:
 		# create the model
 		if K_init is None:
 			K_init = np.zeros([action_dim, state_dim])
+		self.K = K_init
+
 		if b_init is None:
 			b_init = np.zeros([action_dim, 1])
-
-		self.K = K_init
-		self.b = b_init
+		#self.b = b_init
 
 	def train_on_grads(self, states, action_grads):
 		#batchsize = states.shape[1]
@@ -31,4 +31,4 @@ class PolicyModel:
 			#self.b[i,0] +=	self.lr * action_grads[i,0] 
 
 	def predict(self, states):
-		return np.matmul(self.K, states) + self.b
+		return np.matmul(self.K, states)# + self.b

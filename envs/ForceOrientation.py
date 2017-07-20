@@ -27,7 +27,7 @@ class ForceOrientation:
 		self.observation_mu = np.zeros(self.observation_dim)
 		self.observation_sigma = np.ones(self.observation_dim)
 		self.action_mu = np.zeros(self.action_dim)
-		self.action_sigma = 0.01*np.ones(self.action_dim)
+		self.action_sigma = 0.02*np.ones(self.action_dim)
 		self.reward_mu =np.asarray([0])
 		self.reward_sigma = np.asarray([1])
 
@@ -57,10 +57,8 @@ class ForceOrientation:
 
 	# Reward definition
 	def reward_func(self, state, action, new_state, done):
-		#return -( np.linalg.norm(state[0:3]) + 0.2*np.linalg.norm(state[3:6]) )
-		#return max(0.0, 1.0 - np.linalg.norm(state))
-		#return 1.0 - np.linalg.norm(state)
 		f = self.sys.observe(new_state)
+		#return -(np.matmul(f.T, f))
 		return -np.linalg.norm(f)
 
 	# Get observataions
@@ -108,7 +106,7 @@ class ForceSystem:
 		self.state_op = np.random.rand(6)
 
 		# stiffness matrix
-		self.k = 0.25	#diagonal terms bias
+		self.k = 1	#diagonal terms bias
 		self.K = np.random.rand(6,6)
 		for i in range(6):
 			self.K[i,i] += self.k

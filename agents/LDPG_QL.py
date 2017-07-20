@@ -13,7 +13,7 @@ class LDPG_Agent:
 		LRC=0.001,	#learning rate for critic
 		GAMMA=0.99,
 		EXPLORE=4000,
-		BUFFER_SIZE=5000,
+		BUFFER_SIZE=1000,
 		K_init=None,
 		verbose=False,
 		):
@@ -89,7 +89,7 @@ class LDPG_Agent:
 
 		state = np.reshape(state, [-1,1])
 		action = np.reshape(action, [-1,1])
-		reward = int(reward)
+		reward = float(reward)
 		new_state = np.reshape(new_state, [-1,1])
 		done = bool(done)
 
@@ -110,7 +110,7 @@ class LDPG_Agent:
 
 		# Train actor
 		grads = self.critic.action_gradients(states, actions)
-		self.actor.train_on_grads(states, grads)
+		self.actor.train_on_grads(states, np.clip(grads, -0.1, 0.1))
 
 		# Print training info
 		if verbose:

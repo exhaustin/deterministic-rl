@@ -13,7 +13,6 @@ class QValueModel:
 		# create the model
 		self.M = epsilon * np.random.rand(state_dim, action_dim)
 		self.b = epsilon * np.random.rand(1,1)
-		#self.b = np.zeros([1,1])
 
 	def action_gradients(self, states, actions):
 		return np.matmul(self.M.T, states)
@@ -25,8 +24,9 @@ class QValueModel:
 
 		for i in range(self.state_dim):
 			for j in range(self.action_dim):
-				w_grads = np.multiply(states[i,:], actions[j,:])
-				self.M[i,j] += self.lr * np.mean(np.multiply(w_grads, q_grads))
+				Mw_grads = np.multiply(states[i,:], actions[j,:])
+				self.M[i,j] += self.lr * np.mean(np.multiply(Mw_grads.reshape([1,-1]), q_grads))
+
 		self.b += self.lr * np.mean(q_grads)
 
 	def train(self, inputs, q_targets):
@@ -38,5 +38,5 @@ class QValueModel:
 	def predict(self, inputs):
 		state = inputs[0]
 		action = inputs[1]
-		q = np.sum(np.multiply(np.matmul(state.T, self.M).T, action), axis=0) + self.b
+		q = np.sum(np.multiply(np.matmul(state.T, self.M).T ,action), axis=0) + self.b
 		return q
