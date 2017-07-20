@@ -41,5 +41,5 @@ class QValueModel:
 	def predict(self, inputs):
 		state = inputs[0]
 		action = inputs[1]
-		q = np.matmul(np.matmul(state.T, self.M) ,action), axis=0) + np.matmul(np.matmul(state.T, self.N), state) + self.b
+		q = np.matmul(np.matmul(state.T, self.M) ,action) + np.matmul(np.matmul(state.T, self.N), state) + self.b
 		return q[0,0]

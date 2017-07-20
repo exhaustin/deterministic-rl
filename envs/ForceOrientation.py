@@ -102,8 +102,8 @@ class ForceSystem:
 		self.state_op = np.random.rand(6)
 
 		# stiffness matrix
-		self.k = 1.5	#diagonal terms bias
-		self.K = np.random.rand(6,6)
+		self.k = 1	#diagonal terms bias
+		self.K = 0.25*np.random.rand(6,6)
 		for i in range(6):
 			self.K[i,i] += self.k
 			
@@ -114,5 +114,5 @@ class ForceSystem:
 	# obtain reaction force
 	def observe(self, state):
 		state_diff = state - self.state_op
-		return np.matmul(self.K, state_diff.reshape(-1,1))[0,:]
+		return -np.matmul(self.K, state_diff.reshape(-1,1))[0,:]
 
