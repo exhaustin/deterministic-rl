@@ -3,7 +3,7 @@ import sys
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from agents.LDPG_QL import LDPG_Agent
+from agents.DDPG_QL import DDPG_Agent
 from envs.ForceOrientation import ForceOrientation
 
 if __name__ == '__main__':
@@ -17,16 +17,13 @@ if __name__ == '__main__':
 	action_dim = env.action_dim
 
 	# create agent
-	K_init = np.zeros([action_dim, state_dim])
-	for i in range(action_dim):
-		K_init[i,i] = 1
-
-	agent = LDPG_Agent(observation_dim, action_dim,
-		LRA = 1e-4,
-		LRC = 1e-3,
+	agent = DDPG_Agent(observation_dim, action_dim,
+		LRA = 1e-3,
+		LRC = 1e-2,
+		HIDDEN1 = 64,
+		HIDDEN2 = 64,
 		GAMMA = 0,
 		EXPLORE = 4000,
-		K_init = K_init,
 	)
 
 	agent.peek(env)

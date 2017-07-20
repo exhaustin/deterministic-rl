@@ -27,11 +27,11 @@ class QValueModel:
 		for i in range(self.state_dim):
 			for j in range(self.action_dim):
 				Mw_grads = np.multiply(states[i,:], actions[j,:])
-				self.M[i,j] += self.lr * np.mean(np.multiply(Mw_grads, q_grads))
+				self.M[i,j] += self.lr * np.mean(np.multiply(Mw_grads.reshape([1,-1]), q_grads))
 
 			for j2 in range(self.state_dim):
 				Nw_grads = np.multiply(states[i,:], states[j2,:])
-				self.N[i,j2] += self.lr * np.mean(np.multiply(Nw_grads, q_grads))
+				self.N[i,j2] += self.lr * np.mean(np.multiply(Nw_grads.reshape([1,-1]), q_grads))
 
 		self.b += self.lr * np.mean(q_grads)
 
@@ -44,5 +44,5 @@ class QValueModel:
 	def predict(self, inputs):
 		state = inputs[0]
 		action = inputs[1]
-		q = np.matmul(np.matmul(state.T, self.M) ,action) + np.matmul(np.matmul(state.T, self.N), state) + self.b
-		return q[0,0]
+		q = np.sum(np.multiply(np.matmul(state.T, self.M).T ,action), axis=0) + np.sum(np.multiply(np.matmul(state.T, self.N).T, state), axis=0) + self.b
+		return q

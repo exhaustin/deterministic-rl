@@ -89,7 +89,9 @@ class LDPG_Agent:
 
 		state = np.reshape(state, [-1,1])
 		action = np.reshape(action, [-1,1])
+		reward = int(reward)
 		new_state = np.reshape(new_state, [-1,1])
+		done = bool(done)
 
 		# Save experience in buffer
 		self.buff.add((state, action, reward, new_state, done))
@@ -98,9 +100,9 @@ class LDPG_Agent:
 		batch, batchsize = self.buff.getBatch(self.BATCH_SIZE)
 		states = np.concatenate([e[0] for e in batch], axis=1)
 		actions = np.concatenate([e[1] for e in batch], axis=1)
-		rewards = np.asarray([e[2] for e in batch])
+		rewards = np.asarray([[e[2] for e in batch]])
 		new_states = np.concatenate([e[3] for e in batch], axis=1)
-		dones = np.asarray([e[4] for e in batch])
+		dones = np.asarray([[e[4] for e in batch]])
 
 		# Train critic
 		target_q_values = rewards + self.GAMMA * self.critic.predict([new_states, self.actor.predict(new_states)])
