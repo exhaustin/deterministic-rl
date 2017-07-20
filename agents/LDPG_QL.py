@@ -53,7 +53,7 @@ class LDPG_Agent:
 		state = np.reshape(state, [-1,1])
 
 		# Diminishing exploration
-		if self.epsilon > 0:
+		if self.epsilon > 0 and self.EXPLORE > 0:
 			self.epsilon = np.exp(-self.steps/self.EXPLORE)
 		else:
 			self.epsilon = 0
@@ -110,7 +110,7 @@ class LDPG_Agent:
 
 		# Train actor
 		grads = self.critic.action_gradients(states, actions)
-		self.actor.train_on_grads(states, np.clip(grads, -1e-2, 1e-2))
+		self.actor.train_on_grads(states, grads)
 
 		# Print training info
 		if verbose:

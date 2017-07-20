@@ -22,7 +22,7 @@ class PolicyModel:
 		self.b = b_init
 
 	def train_on_grads(self, states, action_grads):
-		batchsize = states.shape[1]
+		#batchsize = states.shape[1]
 
 		for i in range(self.action_dim):
 			for j in range(self.state_dim):

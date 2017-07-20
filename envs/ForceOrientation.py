@@ -28,8 +28,8 @@ class ForceOrientation:
 		self.observation_sigma = np.ones(self.observation_dim)
 		self.action_mu = np.zeros(self.action_dim)
 		self.action_sigma = 0.01*np.ones(self.action_dim)
-		self.reward_mu = [0]
-		self.reward_sigma = [1]
+		self.reward_mu =np.asarray([0])
+		self.reward_sigma = np.asarray([1])
 
 	# Simulate system for one timestep
 	def step(self, action=None):
@@ -60,7 +60,8 @@ class ForceOrientation:
 		#return -( np.linalg.norm(state[0:3]) + 0.2*np.linalg.norm(state[3:6]) )
 		#return max(0.0, 1.0 - np.linalg.norm(state))
 		#return 1.0 - np.linalg.norm(state)
-		return -np.linalg.norm(state)
+		f = self.sys.observe(new_state)
+		return -np.linalg.norm(f)
 
 	# Get observataions
 	def observe(self, state=None):
@@ -70,7 +71,9 @@ class ForceOrientation:
 		return self.sys.observe(state)
 
 	# Reset environment
-	def reset(self):
+	def reset(self, seed=None):
+		if seed is not None:
+			np.random.seed(seed)
 		self.state = np.random.rand(self.state_dim)
 		self.time = 0
 	
@@ -91,10 +94,9 @@ class ForceOrientation:
 		if state is None:
 			state = self.state
 
-		force = (state[0]**2 + state[1]**2 + state[2]**2)**0.5
-		torque = (state[3]**2 + state[4]**2 + state[5]**2)**0.5
+		f = self.observe(state)
 
-		return force, torque
+		return np.linalg.norm(f)
 
 class ForceSystem:
 	def __init__(self, seed=None):
@@ -106,8 +108,8 @@ class ForceSystem:
 		self.state_op = np.random.rand(6)
 
 		# stiffness matrix
-		self.k = 1	#diagonal terms bias
-		self.K = 0.25*np.random.rand(6,6)
+		self.k = 0.25	#diagonal terms bias
+		self.K = np.random.rand(6,6)
 		for i in range(6):
 			self.K[i,i] += self.k
 			
@@ -118,5 +120,6 @@ class ForceSystem:
 	# obtain reaction force
 	def observe(self, state):
 		state_diff = state - self.state_op
-		return np.matmul(self.K, -state_diff.reshape(-1,1))[0,:]
+		f = np.matmul(self.K, -state_diff.reshape([-1,1]))[:,0]
+		return f
 

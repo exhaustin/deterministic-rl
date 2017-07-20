@@ -11,7 +11,7 @@ if __name__ == '__main__':
 	max_episodes = 20
 
 	# create environment
-	env = ForceOrientation()
+	env = ForceOrientation(seed=87878787)
 	state_dim = env.state_dim
 	observation_dim = env.observation_dim
 	action_dim = env.action_dim
@@ -22,24 +22,24 @@ if __name__ == '__main__':
 		K_init[i,i] = 1
 
 	agent = LDPG_Agent(observation_dim, action_dim,
-		LRA = 1e-4,
-		LRC = 1e-3,
-		GAMMA = 0,
-		EXPLORE = 4000,
+		BATCH_SIZE = 20,
+		LRA = 1e-3,
+		LRC = 1e-2,
+		GAMMA = 0.1,
+		EXPLORE = 8000,
 		K_init = K_init,
 	)
 
 	agent.peek(env)
 
 	# create log database
-	state_log = np.empty([max_episodes, 2, 500+2])
+	state_log = np.empty([max_episodes, 1, 500+2])
 
 	# run system
 	for i_ep in range(max_episodes):
 		# "Haruki, reset."
-		env.reset()
-		force, torque = env.render()
-		state_log[i_ep, :, 0] = [force, torque]
+		env.reset(seed=9527)
+		state_log[i_ep, :, 0] = env.render()
 		done = False
 
 		# train
@@ -55,12 +55,10 @@ if __name__ == '__main__':
 			loss = agent.learn(observation, action, reward, new_observation, done)
 
 			# record data
-			force, torque = env.render()
-			state_log[i_ep, :, T] = [force, torque]
+			state_log[i_ep, :, T] = env.render()
 
 			# display
 			print('ep={}, \tt={}, \t'.format(i_ep+1, env.getTime()), end='')
-			print('force={0:5.2f}, \ttorque={1:4.2f}, \t'.format(force, torque), end='')
 			print('cost={0:3.5f}, \tloss={1:3.10f}'.format(-reward,loss))
 
 	# plot results
@@ -68,7 +66,7 @@ if __name__ == '__main__':
 	t = range(502)
 
 	for ep in eps:
-		plt.plot(t, state_log[ep,0,:], 'r', t, state_log[ep,1,:], 'b')
+		plt.plot(t, state_log[ep,0,:])
 		plt.axis([0, 500, 0, 2])
 		plt.show()
 

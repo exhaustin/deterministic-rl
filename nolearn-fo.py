@@ -3,38 +3,42 @@ import sys
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from agents.DDPG_QL import DDPG_Agent
+from agents.LDPG_QL import LDPG_Agent
 from envs.ForceOrientation import ForceOrientation
 
 if __name__ == '__main__':
 	# training parameters
-	max_episodes = 20
+	max_episodes = 1
 
 	# create environment
-	env = ForceOrientation()
+	env = ForceOrientation(seed=87878787)
 	state_dim = env.state_dim
 	observation_dim = env.observation_dim
 	action_dim = env.action_dim
 
 	# create agent
-	agent = DDPG_Agent(observation_dim, action_dim,
-		LRA = 1e-3,
-		LRC = 1e-2,
-		HIDDEN1 = 64,
-		HIDDEN2 = 64,
+	K_init = np.zeros([action_dim, state_dim])
+	for i in range(action_dim):
+		K_init[i,i] = 1
+
+	agent = LDPG_Agent(observation_dim, action_dim,
+		BATCH_SIZE = 10,
+		LRA = 1e-4,
+		LRC = 1e-3,
 		GAMMA = 0,
-		EXPLORE = 4000,
+		EXPLORE = 0,
+		K_init = K_init,
 	)
 
 	agent.peek(env)
 
 	# create log database
-	state_log = np.empty([max_episodes, 2, 500+2])
+	state_log = np.empty([max_episodes, 1, 500+2])
 
 	# run system
 	for i_ep in range(max_episodes):
 		# "Haruki, reset."
-		env.reset()
+		env.reset(9527)
 		state_log[i_ep, :, 0] = env.render()
 		done = False
 
@@ -48,7 +52,8 @@ if __name__ == '__main__':
 			new_observation, reward, done = env.step(action)
 
 			# train agent
-			loss = agent.learn(observation, action, reward, new_observation, done)
+			#loss = agent.learn(observation, action, reward, new_observation, done)
+			loss=0
 
 			# record data
 			state_log[i_ep, :, T] = env.render()
@@ -58,7 +63,7 @@ if __name__ == '__main__':
 			print('cost={0:3.5f}, \tloss={1:3.10f}'.format(-reward,loss))
 
 	# plot results
-	eps = [0,6,12,19]
+	eps = [0]
 	t = range(502)
 
 	for ep in eps:
