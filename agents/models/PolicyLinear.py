@@ -6,7 +6,7 @@ class PolicyModel:
 		lr,		#learning rate
 		K_init=None,
 		b_init=None,
-		toggle_adagrad=False,
+		toggle_adagrad=True,
 		):
 
 		self.state_dim = state_dim
