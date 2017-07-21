@@ -58,8 +58,8 @@ class ForceOrientation:
 	# Reward definition
 	def reward_func(self, state, action, new_state, done):
 		f = self.sys.observe(new_state)
-		return -(np.matmul(f.T, f))
-		#return -np.linalg.norm(f)
+		#return -(np.matmul(f.T, f))
+		return -np.linalg.norm(f)
 
 	# Get observataions
 	def observe(self, state=None):

@@ -22,7 +22,9 @@ class DDPG_Agent:
 		verbose=True,
 		):
 
-		self.BATCH_SIZE=BATCH_SIZE
+		self.state_dim = state_dim
+		self.action_dim = action_dim
+		self.BATCH_SIZE = BATCH_SIZE
 		self.TAU = TAU
 		self.LRA = LRA
 		self.LRC = LRC
@@ -72,7 +74,7 @@ class DDPG_Agent:
 			self.epsilon = 0
 
 		# Ornstein-Uhlenbeck Process
-		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(len(x))
+		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1, self.action_dim)
 
 		# Produce action
 		action_original = self.actor.predict(state)

@@ -18,18 +18,16 @@ if __name__ == '__main__':
 
 	# create agent
 	K_init = np.zeros([action_dim, state_dim])
-	"""
 	for i in range(action_dim):
 		if i < action_dim/2:
 			K_init[i,i] = 0.2
 		else:
 			K_init[i,i] = 0.1
-	"""
 
 	agent = LDPG_Agent(observation_dim, action_dim,
 		BATCH_SIZE = 20,
-		LRA = 1e-5,
-		LRC = 1e-4,
+		LRA = 1e-4,
+		LRC = 1e-3,
 		GAMMA = 0.3,
 		EXPLORE = 8000,
 		K_init = K_init,
@@ -72,7 +70,7 @@ if __name__ == '__main__':
 
 	for ep in eps:
 		plt.plot(t, state_log[ep,0,:])
-		plt.axis([0, 500, 0, 4])
+		plt.axis([0, 500, 0, 2])
 		plt.show()
 
 

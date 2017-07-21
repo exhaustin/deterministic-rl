@@ -18,6 +18,8 @@ class LDPG_Agent:
 		verbose=False,
 		):
 
+		self.state_dim = state_dim
+		self.action_dim = action_dim
 		self.BATCH_SIZE = BATCH_SIZE
 		self.GAMMA = GAMMA
 		self.EXPLORE = EXPLORE
@@ -59,7 +61,7 @@ class LDPG_Agent:
 			self.epsilon = 0
 
 		# Ornstein-Uhlenbeck Process
-		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(1)
+		OU = lambda x : self.theta_OU*(self.mu_OU - x) + self.sigma_OU*np.random.randn(self.action_dim,1)
 
 		# Produce action
 		action_original = self.actor.predict(state)
@@ -67,6 +69,7 @@ class LDPG_Agent:
 		
 		# Clip
 		action = np.clip(action_original + action_noise, -1, 1)
+		#action = action_original + action_noise
 
 		# Smooth using moving average
 		if toggle_filter:
@@ -108,9 +111,20 @@ class LDPG_Agent:
 		target_q_values = rewards + self.GAMMA * self.critic.predict([new_states, self.actor.predict(new_states)])
 		loss = self.critic.train([states, actions], target_q_values)
 
+		#a0 = self.actor.predict(state)
+
 		# Train actor
 		grads = self.critic.action_gradients(states, actions)
 		self.actor.train_on_grads(states, np.clip(grads, -0.1, 0.1))
+
+		# Test
+		#a1 = self.actor.predict(state)
+		#q0 = self.critic.predict([state, a0])
+		#q1 = self.critic.predict([state, a1])
+		#if q0 > q1:
+		#	print('FUCK')
+		#print(q0)
+		#print(q1)
 
 		# Print training info
 		if verbose:
