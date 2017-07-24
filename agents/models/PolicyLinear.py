@@ -23,7 +23,9 @@ class PolicyModel:
 			b_init = np.zeros([action_dim, 1])
 		#self.b = b_init
 
+		# adagrad
 		self.K_gradss = np.ones([action_dim, state_dim])
+		self.lr_denom = 1
 
 	def train_on_grads(self, states, action_grads):
 		#batchsize = states.shape[1]
@@ -34,9 +36,8 @@ class PolicyModel:
 				if self.toggle_adagrad:
 					self.K_gradss[i,j] = 0.99*self.K_gradss[i,j] + 0.01*np.mean(k_grads**2)
 					#self.K_gradss[i,j] = self.K_gradss[i,j] + np.mean(k_grads**2)
-					self.K[i,j] += (self.lr / (0.1 + self.K_gradss[i,j]**0.5)) * np.mean(k_grads)
-				else:
-					self.K[i,j] += self.lr * np.mean(k_grads)
+					self.lr_denom = 0.05 + 0.95*self.K_gradss[i,j]**0.5
+				self.K[i,j] += (self.lr/self.lr_denom) * np.mean(k_grads)
 			#self.b[i,0] +=	self.lr * action_grads[i,0] 
 
 	def predict(self, states):

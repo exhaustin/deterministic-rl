@@ -4,17 +4,25 @@ import math
 class QValueModel:
 	def __init__(self, state_dim, action_dim,
 			lr,
-			epsilon=1e-3
+			epsilon=1e-3,
+			toggle_adagrad=True,
 	):
 		self.lr = lr
 		self.state_dim = state_dim
 		self.action_dim = action_dim
+		self.toggle_adagrad = toggle_adagrad
 
 		# create the model
 		self.M = epsilon * np.random.rand(state_dim, action_dim)
 		self.N = epsilon * np.random.rand(state_dim, state_dim)
 		self.b = epsilon * np.random.rand(1,1)
 		#self.b = np.zeros([1,1])
+
+		# adagrad
+		self.M_gradss = np.ones([state_dim, action_dim])
+		self.N_gradss = np.ones([state_dim, state_dim])
+		self.b_gradss = 1
+		self.lr_denom = 1
 
 	def action_gradients(self, states, actions):
 		a_grads = np.matmul(self.M.T, states)
@@ -28,13 +36,24 @@ class QValueModel:
 		for i in range(self.state_dim):
 			for j in range(self.action_dim):
 				Mw_grads = np.multiply(states[i,:], actions[j,:])
-				self.M[i,j] += self.lr * np.mean(np.multiply(Mw_grads, q_grads[0,:]))
+				m_grads = np.multiply(Mw_grads, q_grads[0,:])	
+				if self.toggle_adagrad:
+					self.M_gradss[i,j] = 0.99*self.M_gradss[i,j] + 0.01*np.mean(m_grads**2)
+					self.lr_denom = 0.05 + 0.95*self.M_gradss[i,j]**0.5
+				self.M[i,j] += (self.lr/self.lr_denom) * np.mean(m_grads)
 
 			for k in range(self.state_dim):
 				Nw_grads = np.multiply(states[i,:], states[k,:])
-				self.N[i,k] += self.lr * np.mean(np.multiply(Nw_grads, q_grads[0,:]))
+				n_grads = np.multiply(Nw_grads, q_grads[0,:])
+				if self.toggle_adagrad:
+					self.N_gradss[i,k] = 0.99*self.N_gradss[i,k] + 0.01*np.mean(n_grads**2)
+					self.lr_denom = 0.05 + 0.95*self.N_gradss[i,k]**0.5
+				self.N[i,k] += (self.lr/self.lr_denom) * np.mean(n_grads)
 
-		self.b += self.lr * np.mean(q_grads)
+		if self.toggle_adagrad:
+			self.b_gradss = 0.99*self.b_gradss + 0.01*np.mean(q_grads**2)
+			self.lr_denom = 0.05 + 0.95*self.b_gradss**0.5
+		self.b += (self.lr/self.lr_denom) * np.mean(q_grads)
 
 	def train(self, inputs, q_targets):
 		delta = q_targets - self.predict(inputs)
