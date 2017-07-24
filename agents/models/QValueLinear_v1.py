@@ -38,7 +38,7 @@ class QValueModel:
 				Mw_grads = np.multiply(states[i,:], actions[j,:])
 				m_grads = np.multiply(Mw_grads, q_grads[0,:])	
 				if self.toggle_adagrad:
-					self.M_gradss[i,j] = 0.99*self.M_gradss[i,j] + 0.01*np.mean(m_grads**2)
+					self.M_gradss[i,j] = 0.99*self.M_gradss[i,j] + np.mean(m_grads**2)
 					self.lr_denom = 0.05 + 0.95*self.M_gradss[i,j]**0.5
 				self.M[i,j] += (self.lr/self.lr_denom) * np.mean(m_grads)
 
@@ -46,12 +46,12 @@ class QValueModel:
 				Nw_grads = np.multiply(states[i,:], states[k,:])
 				n_grads = np.multiply(Nw_grads, q_grads[0,:])
 				if self.toggle_adagrad:
-					self.N_gradss[i,k] = 0.99*self.N_gradss[i,k] + 0.01*np.mean(n_grads**2)
+					self.N_gradss[i,k] = 0.99*self.N_gradss[i,k] + np.mean(n_grads**2)
 					self.lr_denom = 0.05 + 0.95*self.N_gradss[i,k]**0.5
 				self.N[i,k] += (self.lr/self.lr_denom) * np.mean(n_grads)
 
 		if self.toggle_adagrad:
-			self.b_gradss = 0.99*self.b_gradss + 0.01*np.mean(q_grads**2)
+			self.b_gradss = 0.99*self.b_gradss + np.mean(q_grads**2)
 			self.lr_denom = 0.05 + 0.95*self.b_gradss**0.5
 		self.b += (self.lr/self.lr_denom) * np.mean(q_grads)
 

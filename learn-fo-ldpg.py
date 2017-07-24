@@ -11,6 +11,7 @@ if __name__ == '__main__':
 	max_episodes = 20
 
 	# create environment
+	#env = ForceOrientation()
 	env = ForceOrientation(seed=9487)
 	state_dim = env.state_dim
 	observation_dim = env.observation_dim
@@ -43,6 +44,7 @@ if __name__ == '__main__':
 	# run system
 	for i_ep in range(max_episodes):
 		# "Haruki, reset."
+		#env.reset()
 		env.reset(seed=9527)
 		state_log[i_ep, :, 0] = env.render()
 		done = False
