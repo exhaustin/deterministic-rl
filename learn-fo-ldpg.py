@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
 	agent = LDPG_Agent(observation_dim, action_dim,
 		BATCH_SIZE = 20,
-		LRA = 1e-4,
+		LRA = 2e-4,
 		LRC = 1e-3,
 		GAMMA = 0.3,
 		EXPLORE = 8000,
