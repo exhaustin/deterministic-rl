@@ -5,6 +5,7 @@ class QValueModel:
 	def __init__(self, state_dim, action_dim,
 			lr,
 			epsilon=1e-3,
+			regularizer=1e-3,
 			toggle_adagrad=True,
 	):
 		self.lr = lr
@@ -24,6 +25,9 @@ class QValueModel:
 		self.b_gradss = 1
 		self.lr_denom = 1
 
+		# regularizer
+		self.reg = regularizer
+
 	def action_gradients(self, states, actions):
 		a_grads = np.matmul(self.M.T, states)
 		return a_grads
@@ -40,7 +44,7 @@ class QValueModel:
 				if self.toggle_adagrad:
 					self.M_gradss[i,j] = 0.99*self.M_gradss[i,j] + np.mean(m_grads**2)
 					self.lr_denom = 0.05 + 0.95*self.M_gradss[i,j]**0.5
-				self.M[i,j] += (self.lr/self.lr_denom) * np.mean(m_grads)
+				self.M[i,j] += (self.lr/self.lr_denom) * (np.mean(m_grads) - self.reg*self.M[i,j])
 
 			for k in range(self.state_dim):
 				Nw_grads = np.multiply(states[i,:], states[k,:])
@@ -48,7 +52,7 @@ class QValueModel:
 				if self.toggle_adagrad:
 					self.N_gradss[i,k] = 0.99*self.N_gradss[i,k] + np.mean(n_grads**2)
 					self.lr_denom = 0.05 + 0.95*self.N_gradss[i,k]**0.5
-				self.N[i,k] += (self.lr/self.lr_denom) * np.mean(n_grads)
+				self.N[i,k] += (self.lr/self.lr_denom) * (np.mean(n_grads) - self.reg*self.N[i,k])
 
 		if self.toggle_adagrad:
 			self.b_gradss = 0.99*self.b_gradss + np.mean(q_grads**2)

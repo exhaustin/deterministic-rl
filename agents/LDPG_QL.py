@@ -37,10 +37,10 @@ class LDPG_Agent:
 
 		# Initialize actor and critic
 		if verbose: print('Creating actor model...')
-		self.actor = PolicyModel(state_dim, action_dim, lr=LRA, K_init=K_init)
+		self.actor = PolicyModel(state_dim, action_dim, lr=LRA, K_init=K_init, regularizer=1e-3)
 
 		if verbose: print('Creating critic network...')
-		self.critic = QValueModel(state_dim, action_dim, lr=LRC)
+		self.critic = QValueModel(state_dim, action_dim, lr=LRC, regularizer=1e-2)
 
 		# Initialize buffer
 		self.buff = ReplayBuffer(BUFFER_SIZE)
