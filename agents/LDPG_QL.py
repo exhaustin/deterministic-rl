@@ -3,7 +3,7 @@ import math
 import random
 
 from .models.PolicyLinear import PolicyModel
-from .models.QValueLinear_v1 import QValueModel
+from .models.QValueLinear_v2 import QValueModel
 from .misc.ReplayBuffer import ReplayBuffer
 
 class LDPG_Agent:
@@ -115,7 +115,8 @@ class LDPG_Agent:
 
 		# Train actor
 		grads = self.critic.action_gradients(states, actions)
-		self.actor.train_on_grads(states, np.clip(grads, -0.1, 0.1))
+		self.actor.train_on_grads(states, grads)
+		#self.actor.train_on_grads(states, np.clip(grads, -0.1, 0.1))
 
 		# Test
 		#a1 = self.actor.predict(state)
