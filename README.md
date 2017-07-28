@@ -5,17 +5,17 @@
 
 
 ## Introduction
-Collection of basic deterministic reinforcement learning agents and environments
-Agents are also compatible with gym environments
+Collection of basic deterministic reinforcement learning agents and environments  
+Agents are also compatible with gym environments  
 
 
 ## File list  
 **learn-fp-ldpg.py**  
-Applies off-policy deterministic actor-critic with linear models to the force-pose environment
-Usage: `$python learn-fp-ldpg.py`  
+Applies off-policy deterministic actor-critic with linear models to the force-pose environment  
+Usage: `$python learn-fp-ldpg.py` 
 
 **learn-fp-ddpg.py**  
-Applies deep deterministic policy gradient to the force-pose environment
+Applies deep deterministic policy gradient to the force-pose environment  
 Usage: `$python learn-fp-ldpg.py`  
 
 **learn-sp-ddpg.py**  
