@@ -27,7 +27,7 @@ Usage: `$python learn-fp-ldpg.py`
 **requirements.txt**
 Python library list (output file of pip freeze)  
 
-#### agents/  
+### agents/  
 Reinforcement learning agent modules  
 Given any environment, an agent should be able to learn from normalized observations and rewards  
 
@@ -50,7 +50,7 @@ Contains model files
 **misc/**  
 Miscellaneous modules such as replay buffer
 
-#### envs/  
+### envs/  
 Virtual environment modules for testing learning algorithms  
 Maintains system states, allows action input, returns observations and rewards  
 
