@@ -1,5 +1,5 @@
 # Simulation of an object orientation problem
-#	System states X - position and orientation
+#	System states X - position and orientation (pose)
 #	Observations F - forces and torques
 #	Actions dX - change of position and orientation
 #
@@ -10,7 +10,7 @@ import numpy as np
 import math
 import random
 
-class ForceOrientation:
+class ForcePose:
 	def __init__(self, seed=None):
 		self.sys = ForceSystem(seed)
 

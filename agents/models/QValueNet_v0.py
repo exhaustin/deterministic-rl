@@ -88,12 +88,10 @@ class QValueNetwork:
 		return self.model.train_on_batch(inputs, q_targets)
 
 	def predict(self, inputs):
-		#K.set_learning_phase(0)
 		if self.TAU > 0:
 			return self.target_model.predict(inputs)
 		else:
 			return self.model.predict(inputs)
-		#K.set_learning_phase(1)
 
 	def target_train(self):
 		if self.TAU > 0:

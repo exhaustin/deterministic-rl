@@ -36,6 +36,7 @@ class PolicyModel:
 
 		for i in range(self.action_dim):
 			for j in range(self.state_dim):
+				#k_grads = np.multiply(states[j,:], action_grads[i,:]) ???
 				k_grads = -np.multiply(states[j,:], action_grads[i,:])
 				if self.toggle_adagrad:
 					self.K_gradss[i,j] = 0.99*self.K_gradss[i,j] + np.mean(k_grads**2)
