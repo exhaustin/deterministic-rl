@@ -1,4 +1,4 @@
-# Reinforcement Learning with Deterministic Policies
+# A Simple Implementation of Reinforcement Learning with Deterministic Policies
 - Author: Austin Wang
 - Year: 2017
 - Requirements: Numpy (Matplotlib for visualization) (Tensorflow, Keras, for DDPG) (See requirements.txt for full details)
